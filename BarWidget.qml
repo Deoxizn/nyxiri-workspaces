@@ -215,12 +215,14 @@ BarWidget {
 
         // The accent color alone is not enough to spot the focused
         // workspace in the text styles, so the focused cell also gets a
-        // slight dark chip behind its marker. The default style has its
-        // own halo instead, so the chip stays off there.
+        // slight dark chip behind its marker. Shape styles carry their
+        // own focused signal (default's halo, aurora's wide bar), and the
+        // chip on top of them just made aurora read as default, so the
+        // chip stays off for every shape style.
         Rectangle {
           anchors.fill: parent
           anchors.margins: 1
-          visible: shown && root.style !== "default"
+          visible: shown && !root.shapeStyle
           z: -1
           radius: Style.cornerRadius
           color: Qt.rgba(0, 0, 0, 0.28)

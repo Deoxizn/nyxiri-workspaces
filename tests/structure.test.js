@@ -31,9 +31,9 @@ test("the widget reads mode, hideEmpty, and style from its layout entry", () => 
   assert.match(widget, /active: shown/)
 })
 
-test("the focused cell gets a dark chip behind its marker, except in the default style", () => {
+test("the focused cell gets a dark chip behind its marker, except in shape styles", () => {
   const widget = read("BarWidget.qml")
-  assert.match(widget, /visible: shown && root\.style !== "default"/)
+  assert.match(widget, /visible: shown && !root\.shapeStyle/)
   assert.match(widget, /z: -1/)
   assert.match(widget, /Qt\.rgba\(0, 0, 0, 0\.28\)/)
 })
