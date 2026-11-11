@@ -13,7 +13,8 @@ Hyprland workspace numbers for the Nyxiri bar, forked from stock Omarchy's
   **Kanji** (一二三四五六七八九十), **Pac-Man** (Pac-Man on the focused
   workspace, a ghost where windows live, a pellet on empty ones), or
   **Dots** (filled for focused, ringed for occupied, hollow for empty).
-  The focused marker renders in the accent color.
+  The focused marker renders in the accent color, on a dark chip behind
+  the cell so the active workspace stands out at a glance.
 
 Anything else is stock behavior: click a marker to focus that workspace,
 click the focused one to cycle its layout (same as Super + L), scroll over
