@@ -16,6 +16,26 @@
 var MODES = ["10", "5", "active"]
 var SLOTS = 10
 
+// Marker styles, after Shibumi-Shell's marker picker. Every style is text,
+// so it renders in the bar's normal cell: numbers are the slot, kanji are
+// the Japanese numerals, pacman puts Pac-Man on the focused workspace, a
+// ghost on occupied ones, and a pellet on empty ones, and dots are filled /
+// ringed / hollow by state.
+var STYLES = ["numbers", "kanji", "pacman", "dots"]
+var KANJI = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
+var PACMAN_GLYPH = String.fromCodePoint(0xF0BAF) // nf-md-pac_man
+var GHOST_GLYPH = String.fromCodePoint(0xF02A0) // nf-md-ghost
+
+function markerFor(styleValue, slotValue, focused, occupied) {
+  var style = STYLES.indexOf(String(styleValue || "")) !== -1 ? String(styleValue) : "numbers"
+  var slot = Number(slotValue)
+  if (!Number.isInteger(slot) || slot < 1 || slot > SLOTS) slot = 1
+  if (style === "kanji") return KANJI[slot - 1]
+  if (style === "pacman") return focused ? PACMAN_GLYPH : occupied ? GHOST_GLYPH : "·"
+  if (style === "dots") return focused ? "●" : occupied ? "◉" : "○"
+  return labelFor(slot)
+}
+
 function positiveId(value) {
   var id = Number(value)
   return Number.isInteger(id) && id > 0 && id <= 9999 ? id : 0
@@ -39,7 +59,8 @@ function normalize(settings) {
   var raw = settings && typeof settings === "object" ? settings : {}
   return {
     mode: MODES.indexOf(String(raw.mode || "")) !== -1 ? String(raw.mode) : "10",
-    hideEmpty: raw.hideEmpty === true
+    hideEmpty: raw.hideEmpty === true,
+    style: STYLES.indexOf(String(raw.style || "")) !== -1 ? String(raw.style) : "numbers"
   }
 }
 

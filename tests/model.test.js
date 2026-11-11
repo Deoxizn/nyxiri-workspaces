@@ -20,12 +20,12 @@ const VALUES = [
   { id: 15, windowCount: 0, monitorName: "HDMI-A-1" }
 ]
 
-test("normalize keeps the mode and hideEmpty, defaulting to ten and shown", () => {
-  assert.deepEqual(Model.normalize({}), { mode: "10", hideEmpty: false })
-  assert.deepEqual(Model.normalize({ mode: "5", hideEmpty: true }), { mode: "5", hideEmpty: true })
-  assert.deepEqual(Model.normalize({ mode: "active" }), { mode: "active", hideEmpty: false })
-  assert.deepEqual(Model.normalize({ mode: "nope", hideEmpty: "yes" }), { mode: "10", hideEmpty: false })
-  assert.deepEqual(Model.normalize(null), { mode: "10", hideEmpty: false })
+test("normalize keeps the mode, hideEmpty, and style, defaulting to ten, shown, numbers", () => {
+  assert.deepEqual(Model.normalize({}), { mode: "10", hideEmpty: false, style: "numbers" })
+  assert.deepEqual(Model.normalize({ mode: "5", hideEmpty: true, style: "kanji" }), { mode: "5", hideEmpty: true, style: "kanji" })
+  assert.deepEqual(Model.normalize({ mode: "active", style: "pacman" }), { mode: "active", hideEmpty: false, style: "pacman" })
+  assert.deepEqual(Model.normalize({ mode: "nope", hideEmpty: "yes", style: "nope" }), { mode: "10", hideEmpty: false, style: "numbers" })
+  assert.deepEqual(Model.normalize(null), { mode: "10", hideEmpty: false, style: "numbers" })
 })
 
 test("mode ten shows the whole block plus guests and the focused workspace", () => {
@@ -75,6 +75,26 @@ test("slot numbers label ten as zero", () => {
   assert.equal(Model.slotOf(13), 3)
   assert.equal(Model.blockOf(13), 1)
   assert.equal(Model.blockOf(3), 0)
+})
+
+test("markerFor renders every style by state", () => {
+  // Numbers are the slot label.
+  assert.equal(Model.markerFor("numbers", 1, false, false), "1")
+  assert.equal(Model.markerFor("numbers", 10, true, true), "0")
+  assert.equal(Model.markerFor("nope", 3, false, false), "3")
+  // Kanji are the Japanese numerals, same in every state.
+  assert.equal(Model.markerFor("kanji", 1, false, false), "一")
+  assert.equal(Model.markerFor("kanji", 10, true, true), "十")
+  assert.equal(Model.markerFor("kanji", 5, false, true), "五")
+  // Pac-Man: pacman on the focused workspace, a ghost where windows live,
+  // a pellet on empty ones. The glyphs are the Nerd Font codepoints.
+  assert.equal(Model.markerFor("pacman", 2, true, true), String.fromCodePoint(0xF0BAF))
+  assert.equal(Model.markerFor("pacman", 2, false, true), String.fromCodePoint(0xF02A0))
+  assert.equal(Model.markerFor("pacman", 2, false, false), "·")
+  // Dots: filled for focused, ringed for occupied, hollow for empty.
+  assert.equal(Model.markerFor("dots", 2, true, true), "●")
+  assert.equal(Model.markerFor("dots", 2, false, true), "◉")
+  assert.equal(Model.markerFor("dots", 2, false, false), "○")
 })
 
 test("stateFor reports focused, occupied, and window count", () => {

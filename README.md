@@ -9,11 +9,17 @@ Hyprland workspace numbers for the Nyxiri bar, forked from stock Omarchy's
 - **Hide empty workspaces** — drops workspaces with no windows from the row.
   The focused workspace always stays, even when it is empty, so you never
   lose your place.
+- **Style** — what each workspace shows: **Numbers** (the slot, `0` for ten),
+  **Kanji** (一二三四五六七八九十), **Pac-Man** (Pac-Man on the focused
+  workspace, a ghost where windows live, a pellet on empty ones), or
+  **Dots** (filled for focused, ringed for occupied, hollow for empty).
+  The focused marker renders in the accent color.
 
-Anything else is stock behavior: click a number to focus it, click the
-focused one to cycle its layout (same as Super + L), scroll over the row to
-move between workspaces. The active workspace shows its layout glyph
-instead of a number, and slot 10 renders as `0`.
+Anything else is stock behavior: click a marker to focus that workspace,
+click the focused one to cycle its layout (same as Super + L), scroll over
+the row to move between workspaces. Clicking still cycles the layout, but
+the focused cell now shows the style's focused marker instead of the old
+layout glyph.
 
 The plugin id is `devi.nyxiri-workspaces`. The widget paints no background
 of its own; the bar's pill is the background, so pill transparency applies
@@ -42,10 +48,11 @@ empty workspaces shown) and the settings are editable in `shell.json`.
 
 ## Settings
 
-Right-click the bar to open the Nyxiri settings card, Appearance tab,
-**WORKSPACES** section (it only appears while this widget is on the bar):
+Right-click the bar to open the Nyxiri settings card, **Workspaces** tab
+(it only offers controls while this widget is on the bar):
 
 - **Mode** — Ten / Five / Active only.
+- **Style** — Numbers / Kanji / Pac-Man / Dots.
 - **Hide empty workspaces** — on or off.
 
 ## Tests

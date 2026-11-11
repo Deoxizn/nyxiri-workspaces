@@ -18,15 +18,25 @@ test("the manifest declares the Nyxiri workspaces bar widget", () => {
   assert.equal(manifest.barWidget.allowMultiple, false)
 })
 
-test("the widget reads mode and hideEmpty from its layout entry", () => {
+test("the widget reads mode, hideEmpty, and style from its layout entry", () => {
   const widget = read("BarWidget.qml")
   assert.match(widget, /moduleName: "devi\.nyxiri-workspaces"/)
   assert.match(widget, /setting\("mode", "10"\)/)
   assert.match(widget, /setting\("hideEmpty", false\)/)
+  assert.match(widget, /setting\("style", "numbers"\)/)
   assert.match(widget, /import "WorkspaceModel\.js" as Model/)
   assert.match(widget, /Model\.visibleIds\(root\.mode, root\.hideEmpty/)
-  assert.match(widget, /Model\.labelFor\(modelData, root\.slots\)/)
-  assert.match(widget, /Model\.stateFor\(modelData, root\.workspaceValues/)
+  assert.match(widget, /Model\.markerFor\(root\.style, slot, shown, occupied\)/)
+  assert.match(widget, /Model\.stateFor\(modelData, root\.workspaceValues, root\.activeWorkspaceId\(\)\)/)
+  assert.match(widget, /active: shown/)
+})
+
+test("the widget has no layout-glyph machinery left", () => {
+  const widget = read("BarWidget.qml")
+  assert.doesNotMatch(widget, /modeGlyph/)
+  assert.doesNotMatch(widget, /modeProc/)
+  assert.doesNotMatch(widget, /ShellIpc/)
+  assert.doesNotMatch(widget, /activeMode/)
 })
 
 test("the widget paints no background of its own", () => {
@@ -40,8 +50,6 @@ test("the widget keeps stock focus, scroll, and layout-cycle behavior", () => {
   assert.match(widget, /o\.workspaces\.focus\(/)
   assert.match(widget, /scrollWorkspaces/)
   assert.match(widget, /cycleLayout/)
-  assert.match(widget, /modeGlyph/)
-  assert.match(widget, /ShellIpc \{\s*target: "devi\.nyxiri-workspaces"/)
   assert.match(widget, /Hyprland\.refreshWorkspaces\(\)/)
 })
 
