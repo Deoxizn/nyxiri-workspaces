@@ -1,7 +1,7 @@
 # Nyxiri workspaces
 
 Hyprland workspace numbers for the Nyxiri bar, forked from stock Omarchy's
-`omarchy.workspaces` with two settings of its own:
+`omarchy.workspaces` with three settings of its own:
 
 - **Mode** — how many numbers show, Shibumi-style: **Ten** (the monitor's
   whole block of ten), **Five** (only the first five slots guaranteed), or
@@ -17,9 +17,10 @@ Hyprland workspace numbers for the Nyxiri bar, forked from stock Omarchy's
   fills, hollows, or shrinks to a pellet), **Default** (a soft halo behind
   every cell with a small pill marker inside), or **Aurora** (a thin pill
   bar, wider and brighter on the focused workspace). The focused marker
-  renders in the accent color, on a dark chip behind the cell so the
-  active workspace stands out at a glance (the default style has its own
-  halo instead of the chip). Numbers, kanji, Pac-Man, dots, and magic are
+  renders in the bar's active color, on a dark chip behind the cell so the
+  active workspace stands out at a glance (shape styles carry their own
+  focused signal instead of the chip: default's halo, aurora's wide bar).
+  Numbers, kanji, Pac-Man, dots, and magic are
   text; default and aurora are drawn shapes, so their cells are wider.
 
 Anything else is stock behavior: click a marker to focus that workspace,
@@ -51,7 +52,14 @@ plugin folder.
 Put it where the old workspaces widget was, then remove that one from the
 bar. Requires the [Nyxiri bar](https://github.com/Deoxizn/nyxiri) for the
 settings card; without it the widget still works with the defaults (Ten,
-empty workspaces shown) and the settings are editable in `shell.json`.
+numbers, empty workspaces shown) and the settings are editable in
+`shell.json`, on the widget's own layout entry:
+
+```sh
+omarchy bar set devi.nyxiri-workspaces style kanji
+omarchy bar set devi.nyxiri-workspaces mode 5
+omarchy bar set devi.nyxiri-workspaces hideEmpty true
+```
 
 ## Settings
 
@@ -59,7 +67,7 @@ Right-click the bar to open the Nyxiri settings card, **Workspaces** tab
 (it only offers controls while this widget is on the bar):
 
 - **Mode** — Ten / Five / Active only.
-- **Style** — Numbers / Kanji / Pac-Man / Dots.
+- **Style** — Numbers / Kanji / Pac-Man / Dots / Magic / Default / Aurora.
 - **Hide empty workspaces** — on or off.
 
 ## Tests
@@ -68,5 +76,5 @@ Right-click the bar to open the Nyxiri settings card, **Workspaces** tab
 ./test.sh
 ```
 
-`WorkspaceModel.js` is pure logic (mode, hide-empty, block math) and is
+`WorkspaceModel.js` is pure logic (mode, hide-empty, style, block math) and is
 exercised by real node tests; the QML is checked structurally.
