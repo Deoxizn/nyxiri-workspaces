@@ -196,6 +196,18 @@ BarWidget {
         text: Model.markerFor(root.style, slot, shown, occupied)
         active: shown
         opacity: occupied || shown ? 1 : 0.5
+
+        // The accent color alone is not enough to spot the focused
+        // workspace in the number, kanji, and dots styles, so the focused
+        // cell also gets a slight dark chip behind its marker.
+        Rectangle {
+          anchors.fill: parent
+          anchors.margins: 1
+          visible: shown
+          z: -1
+          radius: Style.cornerRadius
+          color: Qt.rgba(0, 0, 0, 0.28)
+        }
         horizontalMargin: 6
         verticalPadding: 6
         fixedWidth: root.vertical ? root.barSize : Style.space(20)

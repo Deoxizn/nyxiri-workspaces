@@ -31,6 +31,13 @@ test("the widget reads mode, hideEmpty, and style from its layout entry", () => 
   assert.match(widget, /active: shown/)
 })
 
+test("the focused cell gets a dark chip behind its marker", () => {
+  const widget = read("BarWidget.qml")
+  assert.match(widget, /visible: shown/)
+  assert.match(widget, /z: -1/)
+  assert.match(widget, /Qt\.rgba\(0, 0, 0, 0\.28\)/)
+})
+
 test("the widget has no layout-glyph machinery left", () => {
   const widget = read("BarWidget.qml")
   assert.doesNotMatch(widget, /modeGlyph/)
@@ -39,7 +46,7 @@ test("the widget has no layout-glyph machinery left", () => {
   assert.doesNotMatch(widget, /activeMode/)
 })
 
-test("the widget paints no background of its own", () => {
+test("the widget paints no pill background of its own", () => {
   const widget = read("BarWidget.qml")
   assert.doesNotMatch(widget, /Rectangle \{[^}]*color: (Style|Util|root)/)
   assert.doesNotMatch(widget, /BorderSurface/)
