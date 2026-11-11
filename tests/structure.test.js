@@ -41,7 +41,12 @@ test("the focused cell gets a dark chip behind its marker, except in the default
 test("shape styles draw rectangles and leave the label empty", () => {
   const widget = read("BarWidget.qml")
   assert.match(widget, /shapeStyle: Model\.markerKind\(root\.style\) === "shape"/)
-  assert.match(widget, /text: root\.shapeStyle \? "" : Model\.markerFor\(root\.style, slot, shown, occupied\)/)
+  // WidgetButton hides itself when its text is empty, so a shape style
+  // keeps the slot number as text and hides the label instead. Clearing
+  // the text removed the whole widget.
+  assert.match(widget, /text: root\.shapeStyle \? Model\.labelFor\(slot\) : Model\.markerFor\(root\.style, slot, shown, occupied\)/)
+  assert.match(widget, /labelVisible: !root\.shapeStyle/)
+  assert.doesNotMatch(widget, /text: root\.shapeStyle \? ""/)
   assert.match(widget, /fixedWidth: root\.vertical \? root\.barSize : Style\.space\(root\.shapeStyle \? 36 : 20\)/)
   // Default: Shibumi's halo (34/16 wide, 16 tall) and pill marker (26/8 wide, 8 tall).
   assert.match(widget, /visible: root\.style === "default"/)
@@ -53,9 +58,10 @@ test("shape styles draw rectangles and leave the label empty", () => {
   assert.match(widget, /width: Style\.space\(shown \? 28 : occupied \? 6 : 4\)/)
   assert.match(widget, /height: Style\.space\(shown \? 3 : occupied \? 6 : 4\)/)
   assert.match(widget, /opacity: shown \? 0\.92 : occupied \? 0\.62 : 0\.18/)
-  // Shape markers use the theme colors, accent on the focused cell.
-  assert.match(widget, /Commons\.Color\.accent/)
-  assert.match(widget, /Commons\.Color\.foreground/)
+  // Shape markers use the same ink the label gets when focused (the bar's
+  // urgent role), foreground otherwise.
+  assert.match(widget, /markerInk: shown \? \(root\.bar \? root\.bar\.urgent : Commons\.Color\.urgent\) : Commons\.Color\.foreground/)
+  assert.match(widget, /color: markerInk/)
 })
 
 test("the widget has no layout-glyph machinery left", () => {

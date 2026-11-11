@@ -199,9 +199,19 @@ BarWidget {
         Layout.topMargin: firstGuest && root.vertical ? Style.space(6) : 0
 
         bar: root.bar
-        text: root.shapeStyle ? "" : Model.markerFor(root.style, slot, shown, occupied)
+        // WidgetButton hides itself when its text is empty
+        // (hasVisualContent), so a shape style keeps the slot number as
+        // its text and hides the label instead of clearing it. Clearing
+        // the text made the whole widget vanish: every cell went
+        // invisible and the row collapsed to zero width.
+        text: root.shapeStyle ? Model.labelFor(slot) : Model.markerFor(root.style, slot, shown, occupied)
+        labelVisible: !root.shapeStyle
         active: shown
         opacity: occupied || shown ? 1 : 0.5
+
+        // The ink the shape markers use: the same color the label gets
+        // when focused (the bar's urgent role), foreground otherwise.
+        readonly property color markerInk: shown ? (root.bar ? root.bar.urgent : Commons.Color.urgent) : Commons.Color.foreground
 
         // The accent color alone is not enough to spot the focused
         // workspace in the text styles, so the focused cell also gets a
@@ -235,7 +245,7 @@ BarWidget {
           width: Style.space(shown ? 26 : 8)
           height: Style.space(8)
           radius: height / 2
-          color: shown ? Commons.Color.accent : occupied ? Commons.Color.foreground : Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.5)
+          color: shown || occupied ? markerInk : Qt.rgba(markerInk.r, markerInk.g, markerInk.b, 0.5)
         }
 
         // Aurora, after Shibumi: a thin pill bar, wider and brighter on
@@ -246,7 +256,7 @@ BarWidget {
           width: Style.space(shown ? 28 : occupied ? 6 : 4)
           height: Style.space(shown ? 3 : occupied ? 6 : 4)
           radius: height / 2
-          color: shown ? Commons.Color.accent : Commons.Color.foreground
+          color: markerInk
           opacity: shown ? 0.92 : occupied ? 0.62 : 0.18
         }
         horizontalMargin: 6
