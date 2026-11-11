@@ -207,11 +207,16 @@ BarWidget {
         text: root.shapeStyle ? Model.labelFor(slot) : Model.markerFor(root.style, slot, shown, occupied)
         labelVisible: !root.shapeStyle
         active: shown
-        opacity: occupied || shown ? 1 : 0.5
+        // Text styles dim empty cells through the button, but shape
+        // styles already dim their markers by state (Shibumi's alphas).
+        // Dimming them a second time made empty cells vanish, so only
+        // the occupied ones showed and both shape styles read the same.
+        opacity: root.shapeStyle ? 1 : (occupied || shown ? 1 : 0.5)
 
-        // The ink the shape markers use: the same color the label gets
-        // when focused (the bar's urgent role), foreground otherwise.
-        readonly property color markerInk: shown ? (root.bar ? root.bar.urgent : Commons.Color.urgent) : Commons.Color.foreground
+        // Shibumi's shape markers are all one ink (the bar's urgent
+        // role), with alpha carrying the state. Foreground is never used
+        // here: occupied markers are the ink, not white.
+        readonly property color shapeInk: root.bar ? root.bar.urgent : Commons.Color.urgent
 
         // The accent color alone is not enough to spot the focused
         // workspace in the text styles, so the focused cell also gets a
@@ -239,7 +244,7 @@ BarWidget {
           width: Style.space(shown ? 34 : 16)
           height: Style.space(16)
           radius: height / 2
-          color: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, shown ? 0.20 : occupied ? 0.18 : 0.06)
+          color: Qt.rgba(shapeInk.r, shapeInk.g, shapeInk.b, shown ? 0.20 : occupied ? 0.18 : 0.06)
         }
         Rectangle {
           anchors.centerIn: parent
@@ -247,7 +252,7 @@ BarWidget {
           width: Style.space(shown ? 26 : 8)
           height: Style.space(8)
           radius: height / 2
-          color: shown || occupied ? markerInk : Qt.rgba(markerInk.r, markerInk.g, markerInk.b, 0.5)
+          color: shown || occupied ? shapeInk : Qt.rgba(shapeInk.r, shapeInk.g, shapeInk.b, 0.25)
         }
 
         // Aurora, after Shibumi: a thin pill bar, wider and brighter on
@@ -258,7 +263,7 @@ BarWidget {
           width: Style.space(shown ? 28 : occupied ? 6 : 4)
           height: Style.space(shown ? 3 : occupied ? 6 : 4)
           radius: height / 2
-          color: markerInk
+          color: shapeInk
           opacity: shown ? 0.92 : occupied ? 0.62 : 0.18
         }
         horizontalMargin: 6
