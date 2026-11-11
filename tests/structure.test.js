@@ -58,11 +58,11 @@ test("shape styles draw rectangles and leave the label empty", () => {
   assert.match(widget, /width: Style\.space\(shown \? 28 : occupied \? 6 : 4\)/)
   assert.match(widget, /height: Style\.space\(shown \? 3 : occupied \? 6 : 4\)/)
   assert.match(widget, /opacity: shown \? 0\.92 : occupied \? 0\.62 : 0\.18/)
-  // Shape markers are all one ink (the bar's urgent role), with alpha
-  // carrying the state; foreground is never used here.
-  assert.match(widget, /shapeInk: root\.bar \? root\.bar\.urgent : Commons\.Color\.urgent/)
-  assert.match(widget, /color: shapeInk/)
-  assert.match(widget, /Qt\.rgba\(shapeInk\.r, shapeInk\.g, shapeInk\.b, 0\.25\)/)
+  // The orange stays on the focused cell only: occupied and empty
+  // markers are the foreground, not the ink.
+  assert.match(widget, /markerInk: shown \? \(root\.bar \? root\.bar\.urgent : Commons\.Color\.urgent\) : Commons\.Color\.foreground/)
+  assert.match(widget, /color: markerInk/)
+  assert.match(widget, /Qt\.rgba\(markerInk\.r, markerInk\.g, markerInk\.b, 0\.25\)/)
   // Shape styles are not dimmed a second time through the button, or
   // empty cells vanish and both shape styles read the same.
   assert.match(widget, /opacity: root\.shapeStyle \? 1 : \(occupied \|\| shown \? 1 : 0\.5\)/)
