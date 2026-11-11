@@ -16,15 +16,25 @@
 var MODES = ["10", "5", "active"]
 var SLOTS = 10
 
-// Marker styles, after Shibumi-Shell's marker picker. Every style is text,
-// so it renders in the bar's normal cell: numbers are the slot, kanji are
-// the Japanese numerals, pacman puts Pac-Man on the focused workspace, a
-// ghost on occupied ones, and a pellet on empty ones, and dots are filled /
-// ringed / hollow by state.
-var STYLES = ["numbers", "kanji", "pacman", "dots"]
+// Marker styles, after Shibumi-Shell's marker picker. Numbers, kanji,
+// pacman, dots, and magic are text, so they render in the bar's normal
+// cell: numbers are the slot, kanji are the Japanese numerals, pacman
+// puts Pac-Man on the focused workspace, a ghost on occupied ones, and a
+// pellet on empty ones, dots are filled / ringed / hollow by state, and
+// magic is a star that fills, hollows, or shrinks to a pellet. Default
+// and aurora are shapes, not text: the delegate draws them as rectangles
+// (a pill halo and marker, an aurora bar), so markerFor returns "" for
+// those and markerKind tells the delegate which path to take.
+var STYLES = ["numbers", "kanji", "pacman", "dots", "magic", "default", "aurora"]
+var SHAPE_STYLES = ["default", "aurora"]
 var KANJI = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
 var PACMAN_GLYPH = String.fromCodePoint(0xF0BAF) // nf-md-pac_man
 var GHOST_GLYPH = String.fromCodePoint(0xF02A0) // nf-md-ghost
+
+function markerKind(styleValue) {
+  var style = STYLES.indexOf(String(styleValue || "")) !== -1 ? String(styleValue) : "numbers"
+  return SHAPE_STYLES.indexOf(style) !== -1 ? "shape" : "text"
+}
 
 function markerFor(styleValue, slotValue, focused, occupied) {
   var style = STYLES.indexOf(String(styleValue || "")) !== -1 ? String(styleValue) : "numbers"
@@ -33,6 +43,8 @@ function markerFor(styleValue, slotValue, focused, occupied) {
   if (style === "kanji") return KANJI[slot - 1]
   if (style === "pacman") return focused ? PACMAN_GLYPH : occupied ? GHOST_GLYPH : "·"
   if (style === "dots") return focused ? "●" : occupied ? "◉" : "○"
+  if (style === "magic") return focused ? "✦" : occupied ? "✧" : "·"
+  if (SHAPE_STYLES.indexOf(style) !== -1) return ""
   return labelFor(slot)
 }
 

@@ -24,6 +24,9 @@ test("normalize keeps the mode, hideEmpty, and style, defaulting to ten, shown, 
   assert.deepEqual(Model.normalize({}), { mode: "10", hideEmpty: false, style: "numbers" })
   assert.deepEqual(Model.normalize({ mode: "5", hideEmpty: true, style: "kanji" }), { mode: "5", hideEmpty: true, style: "kanji" })
   assert.deepEqual(Model.normalize({ mode: "active", style: "pacman" }), { mode: "active", hideEmpty: false, style: "pacman" })
+  assert.deepEqual(Model.normalize({ style: "magic" }), { mode: "10", hideEmpty: false, style: "magic" })
+  assert.deepEqual(Model.normalize({ style: "default" }), { mode: "10", hideEmpty: false, style: "default" })
+  assert.deepEqual(Model.normalize({ style: "aurora" }), { mode: "10", hideEmpty: false, style: "aurora" })
   assert.deepEqual(Model.normalize({ mode: "nope", hideEmpty: "yes", style: "nope" }), { mode: "10", hideEmpty: false, style: "numbers" })
   assert.deepEqual(Model.normalize(null), { mode: "10", hideEmpty: false, style: "numbers" })
 })
@@ -95,6 +98,27 @@ test("markerFor renders every style by state", () => {
   assert.equal(Model.markerFor("dots", 2, true, true), "●")
   assert.equal(Model.markerFor("dots", 2, false, true), "◉")
   assert.equal(Model.markerFor("dots", 2, false, false), "○")
+  // Magic: a star that fills, hollows, or shrinks to a pellet.
+  assert.equal(Model.markerFor("magic", 2, true, true), "✦")
+  assert.equal(Model.markerFor("magic", 2, false, true), "✧")
+  assert.equal(Model.markerFor("magic", 2, false, false), "·")
+  // Default and aurora are shapes, not text: no label for the delegate.
+  assert.equal(Model.markerFor("default", 2, true, true), "")
+  assert.equal(Model.markerFor("default", 2, false, false), "")
+  assert.equal(Model.markerFor("aurora", 2, true, true), "")
+  assert.equal(Model.markerFor("aurora", 2, false, true), "")
+})
+
+test("markerKind splits text styles from shape styles", () => {
+  assert.equal(Model.markerKind("numbers"), "text")
+  assert.equal(Model.markerKind("kanji"), "text")
+  assert.equal(Model.markerKind("pacman"), "text")
+  assert.equal(Model.markerKind("dots"), "text")
+  assert.equal(Model.markerKind("magic"), "text")
+  assert.equal(Model.markerKind("default"), "shape")
+  assert.equal(Model.markerKind("aurora"), "shape")
+  assert.equal(Model.markerKind("nope"), "text")
+  assert.equal(Model.markerKind(undefined), "text")
 })
 
 test("stateFor reports focused, occupied, and window count", () => {

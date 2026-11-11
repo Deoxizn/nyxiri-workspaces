@@ -9,12 +9,18 @@ Hyprland workspace numbers for the Nyxiri bar, forked from stock Omarchy's
 - **Hide empty workspaces** — drops workspaces with no windows from the row.
   The focused workspace always stays, even when it is empty, so you never
   lose your place.
-- **Style** — what each workspace shows: **Numbers** (the slot, `0` for ten),
-  **Kanji** (一二三四五六七八九十), **Pac-Man** (Pac-Man on the focused
-  workspace, a ghost where windows live, a pellet on empty ones), or
-  **Dots** (filled for focused, ringed for occupied, hollow for empty).
-  The focused marker renders in the accent color, on a dark chip behind
-  the cell so the active workspace stands out at a glance.
+- **Style** — what each workspace shows, after Shibumi-Shell's marker
+  picker: **Numbers** (the slot, `0` for ten), **Kanji**
+  (一二三四五六七八九十), **Pac-Man** (Pac-Man on the focused workspace, a
+  ghost where windows live, a pellet on empty ones), **Dots** (filled for
+  focused, ringed for occupied, hollow for empty), **Magic** (a star that
+  fills, hollows, or shrinks to a pellet), **Default** (a soft halo behind
+  every cell with a small pill marker inside), or **Aurora** (a thin pill
+  bar, wider and brighter on the focused workspace). The focused marker
+  renders in the accent color, on a dark chip behind the cell so the
+  active workspace stands out at a glance (the default style has its own
+  halo instead of the chip). Numbers, kanji, Pac-Man, dots, and magic are
+  text; default and aurora are drawn shapes, so their cells are wider.
 
 Anything else is stock behavior: click a marker to focus that workspace,
 click the focused one to cycle its layout (same as Super + L), scroll over

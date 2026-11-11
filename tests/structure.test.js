@@ -31,11 +31,31 @@ test("the widget reads mode, hideEmpty, and style from its layout entry", () => 
   assert.match(widget, /active: shown/)
 })
 
-test("the focused cell gets a dark chip behind its marker", () => {
+test("the focused cell gets a dark chip behind its marker, except in the default style", () => {
   const widget = read("BarWidget.qml")
-  assert.match(widget, /visible: shown/)
+  assert.match(widget, /visible: shown && root\.style !== "default"/)
   assert.match(widget, /z: -1/)
   assert.match(widget, /Qt\.rgba\(0, 0, 0, 0\.28\)/)
+})
+
+test("shape styles draw rectangles and leave the label empty", () => {
+  const widget = read("BarWidget.qml")
+  assert.match(widget, /shapeStyle: Model\.markerKind\(root\.style\) === "shape"/)
+  assert.match(widget, /text: root\.shapeStyle \? "" : Model\.markerFor\(root\.style, slot, shown, occupied\)/)
+  assert.match(widget, /fixedWidth: root\.vertical \? root\.barSize : Style\.space\(root\.shapeStyle \? 36 : 20\)/)
+  // Default: Shibumi's halo (34/16 wide, 16 tall) and pill marker (26/8 wide, 8 tall).
+  assert.match(widget, /visible: root\.style === "default"/)
+  assert.match(widget, /width: Style\.space\(shown \? 34 : 16\)/)
+  assert.match(widget, /width: Style\.space\(shown \? 26 : 8\)/)
+  assert.match(widget, /height: Style\.space\(8\)/)
+  // Aurora: Shibumi's thin pill bar (28/6/4 wide, 3/6/4 tall).
+  assert.match(widget, /visible: root\.style === "aurora"/)
+  assert.match(widget, /width: Style\.space\(shown \? 28 : occupied \? 6 : 4\)/)
+  assert.match(widget, /height: Style\.space\(shown \? 3 : occupied \? 6 : 4\)/)
+  assert.match(widget, /opacity: shown \? 0\.92 : occupied \? 0\.62 : 0\.18/)
+  // Shape markers use the theme colors, accent on the focused cell.
+  assert.match(widget, /Commons\.Color\.accent/)
+  assert.match(widget, /Commons\.Color\.foreground/)
 })
 
 test("the widget has no layout-glyph machinery left", () => {

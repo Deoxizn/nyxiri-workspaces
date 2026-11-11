@@ -4,14 +4,16 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "WorkspaceModel.js" as Model
 
 // Nyxiri workspaces: stock Omarchy's per-monitor workspace numbers, with
-// two settings of its own (read from this widget's shell.json layout entry,
+// three settings of its own (read from this widget's shell.json layout entry,
 // edited in the Nyxiri settings card):
 //   mode       "10" | "5" | "active"   how many numbers show (Shibumi-style)
 //   hideEmpty  true | false            hide workspaces with no windows
+//   style      numbers | kanji | pacman | dots | magic | default | aurora
 // The focused workspace always stays, even when it is empty. The widget
 // paints no background of its own; the bar's pill is the background.
 BarWidget {
@@ -21,6 +23,10 @@ BarWidget {
   readonly property string mode: String(setting("mode", "10"))
   readonly property bool hideEmpty: setting("hideEmpty", false) === true
   readonly property string style: String(setting("style", "numbers"))
+
+  // Default and aurora draw shapes instead of text, so their cells are
+  // wider (Shibumi's default halo is 34 wide) and the label stays empty.
+  readonly property bool shapeStyle: Model.markerKind(root.style) === "shape"
 
   // Every monitor has workspaces 1-10 of its own, which Hyprland numbers in a
   // block of ten per monitor: 1-10, 11-20, and so on (see
@@ -193,24 +199,59 @@ BarWidget {
         Layout.topMargin: firstGuest && root.vertical ? Style.space(6) : 0
 
         bar: root.bar
-        text: Model.markerFor(root.style, slot, shown, occupied)
+        text: root.shapeStyle ? "" : Model.markerFor(root.style, slot, shown, occupied)
         active: shown
         opacity: occupied || shown ? 1 : 0.5
 
         // The accent color alone is not enough to spot the focused
-        // workspace in the number, kanji, and dots styles, so the focused
-        // cell also gets a slight dark chip behind its marker.
+        // workspace in the text styles, so the focused cell also gets a
+        // slight dark chip behind its marker. The default style has its
+        // own halo instead, so the chip stays off there.
         Rectangle {
           anchors.fill: parent
           anchors.margins: 1
-          visible: shown
+          visible: shown && root.style !== "default"
           z: -1
           radius: Style.cornerRadius
           color: Qt.rgba(0, 0, 0, 0.28)
         }
+
+        // Default, after Shibumi: a wide soft halo behind every cell and
+        // a small pill marker inside it. Widths are Shibumi's (34/16 halo,
+        // 26/8 marker); the halo replaces the chip in this style. The
+        // marker is accent on the focused cell, like the text styles.
+        Rectangle {
+          anchors.centerIn: parent
+          visible: root.style === "default"
+          z: -1
+          width: Style.space(shown ? 34 : 16)
+          height: Style.space(16)
+          radius: height / 2
+          color: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, shown ? 0.20 : occupied ? 0.18 : 0.06)
+        }
+        Rectangle {
+          anchors.centerIn: parent
+          visible: root.style === "default"
+          width: Style.space(shown ? 26 : 8)
+          height: Style.space(8)
+          radius: height / 2
+          color: shown ? Commons.Color.accent : occupied ? Commons.Color.foreground : Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.5)
+        }
+
+        // Aurora, after Shibumi: a thin pill bar, wider and brighter on
+        // the focused workspace. The focused chip still applies here.
+        Rectangle {
+          anchors.centerIn: parent
+          visible: root.style === "aurora"
+          width: Style.space(shown ? 28 : occupied ? 6 : 4)
+          height: Style.space(shown ? 3 : occupied ? 6 : 4)
+          radius: height / 2
+          color: shown ? Commons.Color.accent : Commons.Color.foreground
+          opacity: shown ? 0.92 : occupied ? 0.62 : 0.18
+        }
         horizontalMargin: 6
         verticalPadding: 6
-        fixedWidth: root.vertical ? root.barSize : Style.space(20)
+        fixedWidth: root.vertical ? root.barSize : Style.space(root.shapeStyle ? 36 : 20)
         fixedHeight: root.barSize
         onPressed: function() {
           if (shown) root.cycleLayout()
