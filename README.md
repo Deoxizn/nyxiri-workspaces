@@ -114,26 +114,19 @@ numbers, empty workspaces shown) and the settings are editable in
 `shell.json`, on the widget's own layout entry.
 
 Classic mode needs one extra one-time step: Hyprland has to load the
-bundled Lua, so append this block to the end of
-`~/.config/hypr/hyprland.lua` and reload:
-
-```lua
--- BEGIN devi.nyxiri-workspaces
-do
-  local path = os.getenv("HOME") .. "/.config/omarchy/plugins/devi.nyxiri-workspaces/hypr/classic-workspaces.lua"
-  local file = io.open(path, "r")
-  if file then file:close(); dofile(path) end
-end
--- END devi.nyxiri-workspaces
-```
+bundled Lua. The plugin ships a script that appends the dofile block to
+the end of `~/.config/hypr/hyprland.lua` (backing it up first), skips
+itself if the block is already there, and reloads Hyprland:
 
 ```sh
-hyprctl reload
+bash ~/.config/omarchy/plugins/devi.nyxiri-workspaces/scripts/setup-classic.sh
 ```
 
-Without that block the widget still works in 4.5 mode, and the Classic
-toggle does nothing (the mode script waits for the applied file the Lua
-writes, then gives up and puts the flag back).
+After that, the Classic toggle in the settings card switches modes on its
+own; nothing else needs editing. Without that step the widget still works
+in 4.5 mode, and the Classic toggle does nothing (the mode script waits
+for the applied file the Lua writes, then gives up and puts the flag
+back).
 
 ```sh
 omarchy bar set devi.nyxiri-workspaces style kanji

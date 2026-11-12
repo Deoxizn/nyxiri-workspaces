@@ -164,6 +164,16 @@ test("classic mode ships the Lua, the mode script, and its i18n catalog", () => 
   assert.equal(typeof catalog["notify.perMonitor"], "string")
 })
 
+test("the setup script appends the Lua loader once, backs up, and reloads", () => {
+  const setup = read("scripts/setup-classic.sh")
+  assert.match(setup, /-- BEGIN devi\.nyxiri-workspaces/)
+  assert.match(setup, /hypr\/classic-workspaces\.lua/)
+  assert.match(setup, /grep -Fq -- "\$marker" "\$conf"/)
+  assert.match(setup, /\.bak\.\$\(date \+%s\)/)
+  assert.match(setup, /hyprctl reload/)
+  assert.match(setup, /hyprctl configerrors/)
+})
+
 test("the widget reads the applied mode and the flag, and ranges from its layout entry", () => {
   const widget = read("BarWidget.qml")
   assert.match(widget, /setting\("ranges", ""\)/)
