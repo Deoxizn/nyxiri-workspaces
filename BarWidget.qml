@@ -9,7 +9,7 @@ import qs.Ui
 import "WorkspaceModel.js" as Model
 
 // Nyxiri workspaces: stock Omarchy's per-monitor workspace numbers, with
-// three settings of its own (read from this widget's shell.json layout entry,
+// settings of its own (read from this widget's shell.json layout entry,
 // edited in the Nyxiri settings card):
 //   mode       "10" | "5" | "active"   how many numbers show (Shibumi-style)
 //   hideEmpty  true | false            hide workspaces with no windows
@@ -18,6 +18,14 @@ import "WorkspaceModel.js" as Model
 //                          workspace instead of its marker: icons only, no
 //                          numbers, no counts. Empty cells keep the marker.
 //   iconSize   12-24, default 16       app icon size, apps style only
+//   ranges     "DP-1:1-5,HDMI-A-1:6-10" which workspaces each monitor shows,
+//              classic mode only; 0 means 10, so 6-0 is 6-10
+// Classic mode (one global set 1-10, as in Omarchy 4.0.6) is not a setting
+// here: the widget reads what Hyprland applied, from the applied file the
+// bundled hypr/classic-workspaces.lua writes (else the flag file), and the
+// card switches it by running bin/mode. The Lua and the mode script are
+// copied from fabiopbarbieri/omarchy-classic-workspaces (MIT), folded in so
+// the suite stays one plugin; hyprland.lua dofiles the Lua once, see README.
 // In the apps style a thin divider separates the cells, so adjacent
 // workspaces running the same app don't read as one. The ○ was
 // considered; a line doesn't pretend to be a workspace.
@@ -35,6 +43,63 @@ BarWidget {
   readonly property bool hideEmpty: setting("hideEmpty", false) === true || setting("hideEmpty", false) === "true"
   readonly property string style: String(setting("style", "numbers"))
   readonly property int iconSize: Model.clampIconSize(setting("iconSize", 16))
+  // Classic mode only: which workspaces this monitor shows, "DP-1:1-5,
+  // HDMI-A-1:6-10". Empty for a monitor with no entry, which falls back to
+  // the classic rule (1-5 plus any other existing workspace up to 10).
+  readonly property string ranges: String(setting("ranges", ""))
+  readonly property var rangesMap: Model.parseRanges(root.ranges)
+  readonly property var range: root.rangesMap[root.monitorName] || null
+
+  // Classic vs 4.5 workspaces, after omarchy-classic-workspaces: the mode
+  // the last config load applied, from hypr/classic-workspaces.lua, and the
+  // flag, which only counts until a mode has been recorded: Hyprland may
+  // not follow it, after a config error or under an Omarchy switch that
+  // reads it elsewhere.
+  property string appliedMode: ""
+  property bool classicFlag: false
+  property bool perMonitorWorkspaces: true
+
+  function perMonitorFrom(applied, flag) {
+    if (applied === "classic") return false
+    if (applied === "4.5") return true
+    return !flag
+  }
+
+  function updateScope() {
+    root.setPerMonitor(root.perMonitorFrom(root.appliedMode, root.classicFlag))
+  }
+
+  FileView {
+    id: appliedScope
+    path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/omarchy/classic-workspaces/applied"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: { root.appliedMode = text().trim(); root.updateScope() }
+    onLoadFailed: { root.appliedMode = ""; root.updateScope() }
+  }
+
+  FileView {
+    id: workspaceScope
+    path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/omarchy/toggles/no-monitor-workspaces"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: { root.classicFlag = true; root.updateScope() }
+    onLoadFailed: { root.classicFlag = false; root.updateScope() }
+  }
+
+  // Switching modes renumbers workspaces, and Quickshell can keep the old
+  // numbers around, so ask Hyprland for the current lists.
+  function setPerMonitor(value) {
+    var changed = root.perMonitorWorkspaces !== value
+    root.perMonitorWorkspaces = value
+    if (changed) {
+      Hyprland.refreshMonitors()
+      Hyprland.refreshWorkspaces()
+      Hyprland.refreshToplevels()
+    }
+  }
 
   // Default and aurora draw shapes instead of text, so their cells are
   // wider (Shibumi's default halo is 34 wide) and the label stays empty.
@@ -76,11 +141,11 @@ BarWidget {
   }
 
   function blockOf(id) {
-    return Model.blockOf(id, root.slots)
+    return Model.blockOf(id, root.slots, root.perMonitorWorkspaces)
   }
 
   function slotOf(id) {
-    return Model.slotOf(id, root.slots)
+    return Model.slotOf(id, root.slots, root.perMonitorWorkspaces)
   }
 
   function activeWorkspaceId() {
@@ -88,8 +153,10 @@ BarWidget {
   }
 
   // Until Hyprland has written the file, the workspace a monitor shows is in
-  // its own block.
+  // its own block. Classic mode has no blocks, so it is always 0; a stale
+  // 4.5 entry in the blocks file must not put a gap in the row.
   readonly property int block: {
+    if (!root.perMonitorWorkspaces) return 0
     var block = root.blocks[root.monitorName]
     if (block !== undefined) return block
     var active = root.activeWorkspaceId()
@@ -195,7 +262,7 @@ BarWidget {
   }
 
   function workspaceIds() {
-    return Model.visibleIds(root.mode, root.hideEmpty, root.block, root.workspaceValues, root.activeWorkspaceId(), root.monitorName)
+    return Model.visibleIds(root.mode, root.hideEmpty, root.block, root.workspaceValues, root.activeWorkspaceId(), root.monitorName, root.perMonitorWorkspaces, root.range)
   }
 
   function dispatch(expression) {
@@ -203,7 +270,11 @@ BarWidget {
   }
 
   function focusWorkspace(id) {
-    if (root.blockOf(id) === root.block) {
+    // Classic mode: one global set, so every focus is a plain Hyprland
+    // focus by id; per-monitor mode keeps the block-aware focus.
+    if (!root.perMonitorWorkspaces) {
+      root.dispatch("hl.dsp.focus({ workspace = \"" + id + "\" })")
+    } else if (root.blockOf(id) === root.block) {
       root.dispatch("o.workspaces.focus(" + root.slotOf(id) + ", \"" + root.monitorName + "\")")
     } else {
       root.dispatch("hl.dsp.focus({ workspace = \"" + id + "\" })")
@@ -248,6 +319,16 @@ BarWidget {
     target: Hyprland
     function onRawEvent(event) {
       var name = event ? String(event.name) : ""
+      // A mode switch (Classic / 4.5) reloads Hyprland, which refreshes this
+      // widget through configreloaded: re-read the applied mode and the flag
+      // so the bar follows what Hyprland actually applied.
+      if (name === "configreloaded") {
+        appliedScope.reload()
+        workspaceScope.reload()
+        Hyprland.refreshMonitors()
+        Hyprland.refreshWorkspaces()
+        Hyprland.refreshToplevels()
+      }
       // Quickshell credits every workspace switch to the focused monitor, as
       // the event doesn't say which one switched, and misses the workspace a
       // monitor falls back to when its own is moved away. Moving workspaces
@@ -306,7 +387,7 @@ BarWidget {
         // its text and hides the label instead of clearing it. Clearing
         // the text made the whole widget vanish: every cell went
         // invisible and the row collapsed to zero width.
-        text: root.shapeStyle ? Model.labelFor(slot) : Model.markerFor(root.style, slot, shown, occupied)
+        text: root.shapeStyle ? Model.labelFor(slot, root.slots, root.perMonitorWorkspaces) : Model.markerFor(root.style, slot, shown, occupied, root.perMonitorWorkspaces)
         labelVisible: !root.shapeStyle && !showAppIcons
         active: shown
         tooltipText: showAppIcons ? apps.map(function(a) {

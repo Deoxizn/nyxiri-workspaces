@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+# Switch workspace mode: mode [classic|4.5|toggle|status]
+#   classic  one global set 1-10, as in Omarchy 4.0.6
+#   4.5      Omarchy 4.5's per-monitor workspaces
+set -euo pipefail
+
+state="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy"
+flag="$state/toggles/no-monitor-workspaces"
+# What the last config load applied, written by hypr/classic-workspaces.lua.
+# It goes by that rather than the flag, which Hyprland may not have followed.
+applied_file="$state/classic-workspaces/applied"
+
+# Notifications in the language picked under Setup > Language.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib/i18n.sh"
+
+applied() {
+  local mode=""
+  [[ -f $applied_file ]] && read -r mode <"$applied_file"
+  [[ $mode == classic || $mode == 4.5 ]] && echo "$mode"
+  return 0
+}
+
+current="$(applied)"
+if [[ -z $current ]]; then
+  current=4.5
+  [[ -f $flag ]] && current=classic
+fi
+
+case ${1:-toggle} in
+  classic | 4.5) want=$1 ;;
+  toggle) [[ $current == classic ]] && want=4.5 || want=classic ;;
+  status) echo "$current"; exit 0 ;;
+  *) echo "Usage: mode [classic|4.5|toggle|status]" >&2; exit 1 ;;
+esac
+
+[[ $want == "$current" ]] && exit 0
+
+set_flag() {
+  if [[ $1 == classic ]]; then
+    mkdir -p "$(dirname "$flag")"
+    touch "$flag"
+  else
+    rm -f "$flag"
+  fi
+}
+
+# Switching modes moves workspaces between monitors, and Omarchy warps the
+# cursor on workspace changes and focus. The marker tells the Lua part to turn
+# warping off for this reload; afterwards the user's settings come back and the
+# cursor goes back where it was, in case anything still moved it.
+marker="${XDG_RUNTIME_DIR:+$XDG_RUNTIME_DIR/omarchy-classic-workspaces-switching}"
+warp_change="$(hyprctl getoption cursor:warp_on_change_workspace -j 2>/dev/null | jq -r '.int // 1')" || warp_change=1
+no_warps="$(hyprctl getoption cursor:no_warps -j 2>/dev/null | jq -r 'if .bool then "true" else "false" end')" || no_warps=false
+[[ $warp_change =~ ^[0-9]+$ ]] || warp_change=1
+[[ $no_warps == true || $no_warps == false ]] || no_warps=false
+read -r cursor_x cursor_y < <(hyprctl cursorpos 2>/dev/null | tr -d ',') || true
+
+restore_cursor() {
+  [[ -n $marker ]] && rm -f "$marker"
+  hyprctl eval "hl.config({ cursor = { warp_on_change_workspace = $warp_change, no_warps = $no_warps } })" >/dev/null || true
+  [[ $cursor_x =~ ^-?[0-9]+$ && $cursor_y =~ ^-?[0-9]+$ ]] || return 0
+  hyprctl dispatch "hl.dsp.cursor.move({ x = $cursor_x, y = $cursor_y })" >/dev/null || true
+}
+if [[ -n $marker ]]; then
+  trap 'rm -f "$marker"' EXIT
+  touch "$marker"
+fi
+
+# Wait for the config load to say what it applied: an error in the config, or
+# an Omarchy switch that doesn't read this flag, leaves the other mode.
+wait_applied() {
+  local tries
+  for tries in {1..20}; do
+    [[ $(applied) == "$1" ]] && return 0
+    sleep 0.1
+  done
+  return 1
+}
+
+# $1 for the log, in English; $2 for the notification.
+give_up() {
+  set_flag "$current"
+  rm -f "$applied_file"
+  hyprctl reload >/dev/null || true
+  restore_cursor
+  echo "$1" >&2
+  omarchy-notification-send -g 󱂬 "$2" || true
+  exit 1
+}
+
+# Which workspace each window is on, to see what Omarchy renumbered.
+placement() {
+  hyprctl clients -j 2>/dev/null | jq -r '.[] | select(.workspace.id > 0) | "\(.address) \(.workspace.id)"' | LC_ALL=C sort -k1,1
+  true
+}
+# Omarchy renumbers as the reload finishes; wait for the windows to settle.
+settled_placement() {
+  local last now tries
+  last="$(placement)"
+  for tries in {1..10}; do
+    sleep 0.1
+    now="$(placement)"
+    [[ $now == "$last" ]] && break
+    last=$now
+  done
+  printf '%s\n' "$last"
+}
+# "[old] = new, ..." for every workspace whose windows all went to one new id.
+renumbered() {
+  LC_ALL=C join <(printf '%s\n' "$1") <(printf '%s\n' "$2") | awk '
+    { if (($2 in to) && to[$2] != $3) mixed[$2] = 1; to[$2] = $3 }
+    END { for (old in to) if (!(old in mixed) && old != to[old]) printf "[%s] = %s, ", old, to[old] }'
+}
+[[ $want == 4.5 ]] && before_placement="$(placement)"
+
+set_flag "$want"
+rm -f "$applied_file"
+[[ $want == classic ]] && want_name=Classic || want_name="4.5 Workspaces"
+hyprctl reload >/dev/null ||
+  give_up "Could not reload Hyprland; workspace mode was not changed" "$(t notify.reloadFailed)"
+wait_applied "$want" ||
+  give_up "Hyprland didn't switch to $want (see hyprctl configerrors); workspace mode was not changed" "$(t notify.notSwitched "$want_name")"
+
+# Saved layouts are named by workspace id. Going to Classic, compact
+# renumbers workspaces 11+ and takes their layouts along; going to 4.5, Omarchy
+# renumbers them, and the layouts follow the windows. The files are only
+# applied as the config loads, so reload again if any changed.
+layouts="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/workspace-layouts"
+list_layouts() { [[ -d $layouts ]] && find "$layouts" -maxdepth 1 -name '*.lua' -printf '%f %s\n' | sort; true; }
+before="$(list_layouts)"
+if [[ $want == classic ]]; then
+  hyprctl eval 'if o.workspaces.compact then o.workspaces.compact() end' >/dev/null || true
+else
+  moves="$(renumbered "$before_placement" "$(settled_placement)")"
+  [[ -z $moves ]] || hyprctl eval "if o.classic_workspaces then o.classic_workspaces.move_layouts({ $moves}) end" >/dev/null || true
+fi
+[[ $(list_layouts) == "$before" ]] || hyprctl reload >/dev/null || true
+restore_cursor
+
+if [[ $want == classic ]]; then
+  omarchy-notification-send -g 󱂬 "$(t notify.classic)"
+else
+  omarchy-notification-send -g 󱂬 "$(t notify.perMonitor)"
+fi

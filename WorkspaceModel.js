@@ -12,6 +12,15 @@
 //   "active" only workspaces Hyprland actually reports, plus the focused one
 // hideEmpty drops workspaces with no windows, except the focused one, which
 // always stays so you never lose your place.
+//
+// Classic mode (one global set 1-10, as in Omarchy 4.0.6, copied from
+// fabiopbarbieri/omarchy-classic-workspaces): perMonitor is false, so the id
+// is the slot and there is no block. A ranges string pins which workspaces
+// each monitor shows, "DP-1:1-5,HDMI-A-1:6-10" (0 means 10, so 6-0 is
+// 6-10); without a range for a monitor, classic shows 1-5 plus any other
+// existing workspace up to 10, and above 10 only one with windows. The mode itself is not a setting here: the widget reads what
+// Hyprland applied (the applied file, else the flag), and the settings card
+// switches it by running bin/mode.
 
 var MODES = ["10", "5", "active"]
 var SLOTS = 10
@@ -38,10 +47,14 @@ function markerKind(styleValue) {
   return SHAPE_STYLES.indexOf(style) !== -1 ? "shape" : "text"
 }
 
-function markerFor(styleValue, slotValue, focused, occupied) {
+function markerFor(styleValue, slotValue, focused, occupied, perMonitor) {
   var style = STYLES.indexOf(String(styleValue || "")) !== -1 ? String(styleValue) : "numbers"
   var slot = Number(slotValue)
-  if (!Number.isInteger(slot) || slot < 1 || slot > SLOTS) slot = 1
+  if (!Number.isInteger(slot) || slot < 1) slot = 1
+  // Classic mode: an id above 10 has no kanji/pacman/dots marker, so it
+  // shows its number, whatever the style.
+  if (perMonitor === false && slot > SLOTS) return String(slot)
+  if (slot > SLOTS) slot = 1
   if (style === "kanji") return KANJI[slot - 1]
   if (style === "pacman") return focused ? PACMAN_GLYPH : occupied ? GHOST_GLYPH : "·"
   if (style === "dots") return focused ? "●" : occupied ? "◉" : "○"
@@ -55,18 +68,70 @@ function positiveId(value) {
   return Number.isInteger(id) && id > 0 && id <= 9999 ? id : 0
 }
 
-function blockOf(id, slots) {
+function blockOf(id, slots, perMonitor) {
+  // Classic mode: one global set, no blocks.
+  if (perMonitor === false) return 0
   return Math.floor((positiveId(id) - 1) / (slots || SLOTS))
 }
 
-function slotOf(id, slots) {
+function slotOf(id, slots, perMonitor) {
+  // Classic mode: the id is the slot; workspace 13 is slot 13, not 3.
+  if (perMonitor === false) return positiveId(id)
   return (positiveId(id) - 1) % (slots || SLOTS) + 1
 }
 
-// The label a slot shows: slot 10 renders as 0, like stock Omarchy.
-function labelFor(id, slots) {
-  var slot = slotOf(id, slots)
+// The label a slot shows: slot 10 renders as 0, like stock Omarchy. In
+// classic mode an id above 10 shows its own number.
+function labelFor(id, slots, perMonitor) {
+  var slot = slotOf(id, slots, perMonitor)
+  if (perMonitor === false) return slot === SLOTS ? "0" : String(slot)
   return slot === (slots || SLOTS) ? "0" : String(slot)
+}
+
+// Per-monitor ranges for classic mode, from the settings card's text field:
+//   "DP-1:1-5,HDMI-A-1:6-10"
+// Entries split on whitespace or commas; each is MONITOR:spec, where spec
+// is a range "a-b" or a single id, and 0 means 10 (so "6-0" is 6-10).
+// Malformed parts are dropped, so a half-typed field never breaks the bar;
+// an empty or unparseable string is {}.
+function rangeNumber(value) {
+  var n = Number(String(value || "").trim())
+  if (!Number.isInteger(n) || n < 0 || n > SLOTS) return 0
+  return n === 0 ? SLOTS : n
+}
+
+function parseRanges(text) {
+  var out = {}
+  var tokens = String(text || "").split(/[\s,]+/)
+  for (var i = 0; i < tokens.length; i++) {
+    var token = tokens[i]
+    if (!token) continue
+    var colon = token.indexOf(":")
+    if (colon < 1) continue
+    var name = token.slice(0, colon)
+    var spec = token.slice(colon + 1)
+    if (!name || !spec) continue
+    var ids = []
+    var dash = spec.indexOf("-")
+    if (dash >= 0) {
+      var lo = rangeNumber(spec.slice(0, dash))
+      var hi = rangeNumber(spec.slice(dash + 1))
+      if (lo && hi && lo <= hi) {
+        for (var n = lo; n <= hi; n++) ids.push(n)
+      }
+    } else {
+      var single = rangeNumber(spec)
+      if (single) ids.push(single)
+    }
+    if (ids.length === 0) continue
+    var list = out[name] || []
+    for (var j = 0; j < ids.length; j++) {
+      if (list.indexOf(ids[j]) === -1) list.push(ids[j])
+    }
+    list.sort(function(left, right) { return left - right })
+    out[name] = list
+  }
+  return out
 }
 
 function normalize(settings) {
@@ -74,7 +139,8 @@ function normalize(settings) {
   return {
     mode: MODES.indexOf(String(raw.mode || "")) !== -1 ? String(raw.mode) : "10",
     hideEmpty: raw.hideEmpty === true,
-    style: STYLES.indexOf(String(raw.style || "")) !== -1 ? String(raw.style) : "numbers"
+    style: STYLES.indexOf(String(raw.style || "")) !== -1 ? String(raw.style) : "numbers",
+    ranges: String(raw.ranges || "")
   }
 }
 
@@ -187,12 +253,17 @@ function appsForWorkspace(idValue, values) {
   return out
 }
 
-function visibleIds(modeValue, hideEmpty, block, values, focusedId, monitorName) {
+function visibleIds(modeValue, hideEmpty, block, values, focusedId, monitorName, perMonitor, range) {
   var mode = MODES.indexOf(String(modeValue || "")) !== -1 ? String(modeValue) : "10"
   var source = values && typeof values.length === "number" ? values : []
   var focused = positiveId(focusedId)
   var blockNumber = Number(block)
   if (!Number.isInteger(blockNumber) || blockNumber < 0) blockNumber = 0
+  // Classic mode: one global set, so the block is meaningless and the
+  // range (when this monitor has one) is the set. perMonitor defaults to
+  // true, so every old caller keeps the 4.5 behavior.
+  var classic = perMonitor === false
+  var rangeIds = range && typeof range.length === "number" ? range : null
 
   var ids = []
   function add(id) {
@@ -201,9 +272,15 @@ function visibleIds(modeValue, hideEmpty, block, values, focusedId, monitorName)
   }
 
   // Guaranteed slots for the persistent modes; "active" guarantees none.
+  // In classic mode with a range, the range is the explicit set, so the
+  // mode's count doesn't trim it; "active" still shows only the focused one.
   if (mode !== "active") {
-    var limit = mode === "5" ? 5 : SLOTS
-    for (var slot = 1; slot <= limit; slot++) add(blockNumber * SLOTS + slot)
+    if (classic && rangeIds && rangeIds.length) {
+      for (var r = 0; r < rangeIds.length; r++) add(rangeIds[r])
+    } else {
+      var limit = mode === "5" ? 5 : SLOTS
+      for (var slot = 1; slot <= limit; slot++) add(classic ? slot : blockNumber * SLOTS + slot)
+    }
   }
 
   var guests = []
@@ -211,7 +288,16 @@ function visibleIds(modeValue, hideEmpty, block, values, focusedId, monitorName)
     var entry = source[i] || {}
     var id = positiveId(entry.id)
     if (!id) continue
-    if (blockOf(id) === blockNumber) add(id)
+    if (classic) {
+      // With a range, only the range shows (the focused one joins below);
+      // without one, the classic rule: any existing workspace up to 10,
+      // and above 10 only one with windows. (The upstream rule also keeps
+      // one shown on a screen; the model can't see other monitors' active
+      // workspace, so windows are the testable half, and the focused one
+      // always joins anyway.)
+      if (rangeIds && rangeIds.length) continue
+      if (id <= SLOTS || (Number(entry.windowCount) || 0) > 0) add(id)
+    } else if (blockOf(id) === blockNumber) add(id)
     else if (entry.monitorName && entry.monitorName === monitorName) guests.push(id)
   }
   guests.sort(function(left, right) { return left - right })

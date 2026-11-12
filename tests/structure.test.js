@@ -30,7 +30,7 @@ test("the widget reads mode, hideEmpty, and style from its layout entry", () => 
   assert.match(widget, /Model\.clampIconSize\(setting\("iconSize", 16\)\)/)
   assert.match(widget, /import "WorkspaceModel\.js" as Model/)
   assert.match(widget, /Model\.visibleIds\(root\.mode, root\.hideEmpty/)
-  assert.match(widget, /Model\.markerFor\(root\.style, slot, shown, occupied\)/)
+  assert.match(widget, /Model\.markerFor\(root\.style, slot, shown, occupied, root\.perMonitorWorkspaces\)/)
   assert.match(widget, /readonly property var apps: root\.style === "apps" \? Model\.appsForWorkspace\(modelData, root\.workspaceValues\) : \[\]/)
   assert.match(widget, /Model\.stateFor\(modelData, root\.workspaceValues, root\.activeWorkspaceId\(\)\)/)
   assert.match(widget, /active: shown/)
@@ -49,7 +49,7 @@ test("shape styles draw rectangles and leave the label empty", () => {
   // WidgetButton hides itself when its text is empty, so a shape style
   // keeps the slot number as text and hides the label instead. Clearing
   // the text removed the whole widget.
-  assert.match(widget, /text: root\.shapeStyle \? Model\.labelFor\(slot\) : Model\.markerFor\(root\.style, slot, shown, occupied\)/)
+  assert.match(widget, /text: root\.shapeStyle \? Model\.labelFor\(slot, root\.slots, root\.perMonitorWorkspaces\) : Model\.markerFor\(root\.style, slot, shown, occupied, root\.perMonitorWorkspaces\)/)
   assert.match(widget, /labelVisible: !root\.shapeStyle && !showAppIcons/)
   assert.doesNotMatch(widget, /text: root\.shapeStyle \? ""/)
   assert.match(widget, /fixedWidth: root\.vertical \? root\.barSize : Style\.space\(showAppIcons \? appCellSpan : \(root\.shapeStyle \? 36 : 20\)\)/)
@@ -148,4 +148,33 @@ test("install.sh defaults to omarchy plugin add", () => {
   assert.match(install, /devi\.nyxiri-workspaces/)
   // The usage heredoc must be quoted, or backticks inside it would execute.
   assert.match(install, /cat <<'USAGE'/)
+})
+
+test("classic mode ships the Lua, the mode script, and its i18n catalog", () => {
+  const lua = read("hypr/classic-workspaces.lua")
+  assert.match(lua, /o\.classic_workspaces = \{ move_layouts = move_layouts \}/)
+  assert.match(lua, /record\("classic"\)/)
+  assert.match(lua, /fabiopbarbieri\/omarchy-classic-workspaces/)
+  const mode = read("bin/mode")
+  assert.match(mode, /no-monitor-workspaces/)
+  assert.match(mode, /classic-workspaces\/applied/)
+  assert.match(mode, /hyprctl reload/)
+  const catalog = JSON.parse(read("i18n/en.json"))
+  assert.equal(typeof catalog["notify.classic"], "string")
+  assert.equal(typeof catalog["notify.perMonitor"], "string")
+})
+
+test("the widget reads the applied mode and the flag, and ranges from its layout entry", () => {
+  const widget = read("BarWidget.qml")
+  assert.match(widget, /setting\("ranges", ""\)/)
+  assert.match(widget, /Model\.parseRanges\(root\.ranges\)/)
+  assert.match(widget, /omarchy\/classic-workspaces\/applied/)
+  assert.match(widget, /omarchy\/toggles\/no-monitor-workspaces/)
+  assert.match(widget, /property bool perMonitorWorkspaces: true/)
+  assert.match(widget, /Model\.visibleIds\(root\.mode, root\.hideEmpty, root\.block, root\.workspaceValues, root\.activeWorkspaceId\(\), root\.monitorName, root\.perMonitorWorkspaces, root\.range\)/)
+  assert.match(widget, /if \(name === "configreloaded"\)/)
+  assert.match(widget, /appliedScope\.reload\(\)/)
+  assert.match(widget, /workspaceScope\.reload\(\)/)
+  // Classic focus is a plain Hyprland focus by id, not the block-aware one.
+  assert.match(widget, /if \(!root\.perMonitorWorkspaces\) \{\s*root\.dispatch\("hl\.dsp\.focus/)
 })

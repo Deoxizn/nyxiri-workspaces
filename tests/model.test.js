@@ -21,15 +21,15 @@ const VALUES = [
 ]
 
 test("normalize keeps the mode, hideEmpty, and style, defaulting to ten, shown, numbers", () => {
-  assert.deepEqual(Model.normalize({}), { mode: "10", hideEmpty: false, style: "numbers" })
-  assert.deepEqual(Model.normalize({ mode: "5", hideEmpty: true, style: "kanji" }), { mode: "5", hideEmpty: true, style: "kanji" })
-  assert.deepEqual(Model.normalize({ mode: "active", style: "pacman" }), { mode: "active", hideEmpty: false, style: "pacman" })
-  assert.deepEqual(Model.normalize({ style: "magic" }), { mode: "10", hideEmpty: false, style: "magic" })
-  assert.deepEqual(Model.normalize({ style: "default" }), { mode: "10", hideEmpty: false, style: "default" })
-  assert.deepEqual(Model.normalize({ style: "aurora" }), { mode: "10", hideEmpty: false, style: "aurora" })
-  assert.deepEqual(Model.normalize({ style: "apps" }), { mode: "10", hideEmpty: false, style: "apps" })
-  assert.deepEqual(Model.normalize({ mode: "nope", hideEmpty: "yes", style: "nope" }), { mode: "10", hideEmpty: false, style: "numbers" })
-  assert.deepEqual(Model.normalize(null), { mode: "10", hideEmpty: false, style: "numbers" })
+  assert.deepEqual(Model.normalize({}), { mode: "10", hideEmpty: false, style: "numbers", ranges: "" })
+  assert.deepEqual(Model.normalize({ mode: "5", hideEmpty: true, style: "kanji", ranges: "" }), { mode: "5", hideEmpty: true, style: "kanji", ranges: "" })
+  assert.deepEqual(Model.normalize({ mode: "active", style: "pacman" }), { mode: "active", hideEmpty: false, style: "pacman", ranges: "" })
+  assert.deepEqual(Model.normalize({ style: "magic" }), { mode: "10", hideEmpty: false, style: "magic", ranges: "" })
+  assert.deepEqual(Model.normalize({ style: "default" }), { mode: "10", hideEmpty: false, style: "default", ranges: "" })
+  assert.deepEqual(Model.normalize({ style: "aurora" }), { mode: "10", hideEmpty: false, style: "aurora", ranges: "" })
+  assert.deepEqual(Model.normalize({ style: "apps" }), { mode: "10", hideEmpty: false, style: "apps", ranges: "" })
+  assert.deepEqual(Model.normalize({ mode: "nope", hideEmpty: "yes", style: "nope" }), { mode: "10", hideEmpty: false, style: "numbers", ranges: "" })
+  assert.deepEqual(Model.normalize(null), { mode: "10", hideEmpty: false, style: "numbers", ranges: "" })
 })
 
 test("mode ten shows the whole block plus guests and the focused workspace", () => {
@@ -236,4 +236,80 @@ test("fallbackLetter is the first character of the label, uppercased", () => {
   assert.equal(Model.fallbackLetter("", "org.omarchy.herdr"), "H")
   assert.equal(Model.fallbackLetter("", "chrome-discord.com__-Default"), "D")
   assert.equal(Model.fallbackLetter("", ""), "")
+})
+
+test("parseRanges reads monitor ranges, with 0 meaning 10", () => {
+  assert.deepEqual(Model.parseRanges("DP-1:1-5,HDMI-A-1:6-10"), { "DP-1": [1, 2, 3, 4, 5], "HDMI-A-1": [6, 7, 8, 9, 10] })
+  assert.deepEqual(Model.parseRanges("DP-1:1-5 HDMI-A-1:6-0"), { "DP-1": [1, 2, 3, 4, 5], "HDMI-A-1": [6, 7, 8, 9, 10] })
+  assert.deepEqual(Model.parseRanges("DP-1:3"), { "DP-1": [3] })
+  assert.deepEqual(Model.parseRanges("DP-1:0"), { "DP-1": [10] })
+  assert.deepEqual(Model.parseRanges("DP-1:1-5,DP-1:7"), { "DP-1": [1, 2, 3, 4, 5, 7] })
+  assert.deepEqual(Model.parseRanges(""), {})
+  assert.deepEqual(Model.parseRanges("garbage"), {})
+  assert.deepEqual(Model.parseRanges("DP-1:11"), {})
+  assert.deepEqual(Model.parseRanges("DP-1:5-1"), {})
+})
+
+test("classic mode is one global set: the id is the slot, there is no block", () => {
+  assert.equal(Model.slotOf(13, 10, false), 13)
+  assert.equal(Model.slotOf(3, 10, false), 3)
+  assert.equal(Model.blockOf(13, 10, false), 0)
+  assert.equal(Model.labelFor(13, 10, false), "13")
+  assert.equal(Model.labelFor(10, 10, false), "0")
+  // Per-monitor mode keeps the old math.
+  assert.equal(Model.slotOf(13, 10, true), 3)
+  assert.equal(Model.blockOf(13, 10, true), 1)
+})
+
+test("classic markerFor shows the number for ids above ten, whatever the style", () => {
+  assert.equal(Model.markerFor("numbers", 13, false, true, false), "13")
+  assert.equal(Model.markerFor("kanji", 13, false, false, false), "13")
+  assert.equal(Model.markerFor("pacman", 13, true, true, false), "13")
+  assert.equal(Model.markerFor("numbers", 10, true, true, false), "0")
+  assert.equal(Model.markerFor("kanji", 10, true, true, false), "十")
+})
+
+test("classic mode without a range shows the global set plus occupied workspaces above ten", () => {
+  // 1-10 guaranteed; 12 and 13 have windows, 11 and 15 are empty and stay out.
+  assert.deepEqual(
+    Model.visibleIds("10", false, 0, VALUES, 3, "DP-1", false, null),
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13]
+  )
+  assert.deepEqual(
+    Model.visibleIds("5", false, 0, VALUES, 3, "DP-1", false, null),
+    [1, 2, 3, 4, 5, 7, 12, 13]
+  )
+  assert.deepEqual(
+    Model.visibleIds("active", false, 0, VALUES, 3, "DP-1", false, null),
+    [1, 3, 7, 12, 13]
+  )
+})
+
+test("classic mode with a range shows only that monitor's workspaces, plus the focused one", () => {
+  assert.deepEqual(
+    Model.visibleIds("10", false, 0, VALUES, 3, "DP-1", false, [1, 2, 3, 4, 5]),
+    [1, 2, 3, 4, 5]
+  )
+  // Focused 8 is outside DP-1's range and still joins, so you never lose it.
+  assert.deepEqual(
+    Model.visibleIds("10", false, 0, VALUES, 8, "DP-1", false, [1, 2, 3, 4, 5]),
+    [1, 2, 3, 4, 5, 8]
+  )
+  // HDMI-A-1's range, focused 12 outside it.
+  assert.deepEqual(
+    Model.visibleIds("10", false, 0, VALUES, 12, "HDMI-A-1", false, [6, 7, 8, 9, 10]),
+    [6, 7, 8, 9, 10, 12]
+  )
+  // A range is the explicit set, so mode five doesn't trim it.
+  assert.deepEqual(
+    Model.visibleIds("5", false, 0, VALUES, 3, "DP-1", false, [1, 2, 3, 4, 5]),
+    [1, 2, 3, 4, 5]
+  )
+})
+
+test("classic mode with hideEmpty keeps only occupied workspaces and the focused one", () => {
+  assert.deepEqual(
+    Model.visibleIds("10", true, 0, VALUES, 3, "DP-1", false, null),
+    [3, 12, 13]
+  )
 })

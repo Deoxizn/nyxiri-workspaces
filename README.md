@@ -1,7 +1,7 @@
 # Nyxiri workspaces
 
 Hyprland workspace numbers for the Nyxiri bar, forked from stock Omarchy's
-`omarchy.workspaces` with three settings of its own:
+`omarchy.workspaces` with settings of its own:
 
 - **Mode** — how many numbers show, Shibumi-style: **Ten** (the monitor's
   whole block of ten), **Five** (only the first five slots guaranteed), or
@@ -46,6 +46,47 @@ the row to move between workspaces. Clicking still cycles the layout, but
 the focused cell now shows the style's focused marker instead of the old
 layout glyph.
 
+## Classic workspaces
+
+One global set of workspaces 1-10, as in Omarchy 4.0.6, instead of 4.5's
+per-monitor blocks. The toggle lives in the settings card's **Workspaces**
+tab (**Classic workspaces**); it runs `bin/mode`, which flips the flag
+(`~/.local/state/omarchy/toggles/no-monitor-workspaces`) and reloads
+Hyprland. The widget reads what Hyprland actually applied, from the
+applied file the Lua writes, so the bar follows the real mode even if a
+config error leaves the other one in place.
+
+While classic is on, **Workspaces per monitor** pins which workspaces each
+monitor shows, so a two-monitor setup can split the global set instead of
+showing the same ten numbers twice:
+
+```
+DP-1:1-5,HDMI-A-1:6-10
+```
+
+`0` means 10, so `6-0` is 6-10. Entries split on whitespace or commas, a
+single id works too (`DP-1:3`), and a monitor with no entry falls back to
+the classic rule: 1-5 plus any other existing workspace up to 10, and
+above 10 only one with windows. The focused workspace always joins its
+monitor's row even when it falls outside that monitor's range. The
+toggle is also available from the command line:
+
+```sh
+bash ~/.config/omarchy/plugins/devi.nyxiri-workspaces/bin/mode classic
+bash ~/.config/omarchy/plugins/devi.nyxiri-workspaces/bin/mode 4.5
+bash ~/.config/omarchy/plugins/devi.nyxiri-workspaces/bin/mode status
+```
+
+The Hyprland side is `hypr/classic-workspaces.lua`, and the mode script is
+`bin/mode`, both copied from
+[fabiopbarbieri/omarchy-classic-workspaces](https://github.com/fabiopbarbieri/omarchy-classic-workspaces)
+(MIT) and folded in here so the suite stays one plugin instead of two.
+The Lua makes Omarchy's renumbering a no-op while classic is on, restores
+the 4.0.6 keybindings (Super + 1-0, Super + Tab across monitors, Super +
+Shift + Alt + arrows to move a workspace to another monitor), and renumbers
+workspaces 11+ into 1-10 when switching to classic. Saved layouts (Super +
+L) follow their workspace across the switch.
+
 The plugin id is `devi.nyxiri-workspaces`. The widget paints no background
 of its own; the bar's pill is the background, so pill transparency applies
 to it like everything else.
@@ -70,7 +111,29 @@ Put it where the old workspaces widget was, then remove that one from the
 bar. Requires the [Nyxiri bar](https://github.com/Deoxizn/nyxiri) for the
 settings card; without it the widget still works with the defaults (Ten,
 numbers, empty workspaces shown) and the settings are editable in
-`shell.json`, on the widget's own layout entry:
+`shell.json`, on the widget's own layout entry.
+
+Classic mode needs one extra one-time step: Hyprland has to load the
+bundled Lua, so append this block to the end of
+`~/.config/hypr/hyprland.lua` and reload:
+
+```lua
+-- BEGIN devi.nyxiri-workspaces
+do
+  local path = os.getenv("HOME") .. "/.config/omarchy/plugins/devi.nyxiri-workspaces/hypr/classic-workspaces.lua"
+  local file = io.open(path, "r")
+  if file then file:close(); dofile(path) end
+end
+-- END devi.nyxiri-workspaces
+```
+
+```sh
+hyprctl reload
+```
+
+Without that block the widget still works in 4.5 mode, and the Classic
+toggle does nothing (the mode script waits for the applied file the Lua
+writes, then gives up and puts the flag back).
 
 ```sh
 omarchy bar set devi.nyxiri-workspaces style kanji
@@ -92,6 +155,12 @@ Right-click the bar to open the Nyxiri settings card, **Workspaces** tab
   the Apps style is picked; it does nothing in the other styles. The
   `bar set` example above needs `--json`, or the value lands as a string
   (the widget accepts both, the card slider writes a number).
+- **Classic workspaces** — on or off. One global set 1-10 instead of 4.5's
+  per-monitor blocks; the switch reloads Hyprland and takes a second or
+  two. Needs the Lua loaded (see Install), or the toggle does nothing.
+- **Workspaces per monitor** — only shows while classic is on.
+  `DP-1:1-5,HDMI-A-1:6-10` pins which workspaces each monitor shows; `0`
+  means 10. A monitor with no entry falls back to the classic rule.
 
 ## Tests
 
