@@ -17,6 +17,7 @@ import "WorkspaceModel.js" as Model
 //              | apps      apps shows the icons of the apps running on a
 //                          workspace instead of its marker: icons only, no
 //                          numbers, no counts. Empty cells keep the marker.
+//   iconSize   12-24, default 16       app icon size, apps style only
 // The focused workspace always stays, even when it is empty. The widget
 // paints no background of its own; the bar's pill is the background.
 BarWidget {
@@ -30,6 +31,7 @@ BarWidget {
   // nothing.
   readonly property bool hideEmpty: setting("hideEmpty", false) === true || setting("hideEmpty", false) === "true"
   readonly property string style: String(setting("style", "numbers"))
+  readonly property int iconSize: Model.clampIconSize(setting("iconSize", 16))
 
   // Default and aurora draw shapes instead of text, so their cells are
   // wider (Shibumi's default halo is 34 wide) and the label stays empty.
@@ -259,11 +261,11 @@ BarWidget {
 
         // One icon per app on this workspace, when the style is apps. Icons
         // only: no numbers, no counts. Empty workspaces have no apps, so
-        // they keep their number. A cell's icons span 16px each with a 2px
-        // gap, plus 8px of padding.
+        // they keep their number. A cell's icons span iconSize each with a
+        // 2px gap, plus 8px of padding.
         readonly property var apps: root.style === "apps" ? Model.appsForWorkspace(modelData, root.workspaceValues) : []
         readonly property bool showAppIcons: apps.length > 0
-        readonly property int appCellSpan: showAppIcons ? apps.length * 18 + 8 : 0
+        readonly property int appCellSpan: showAppIcons ? apps.length * (root.iconSize + 2) + 8 : 0
 
         // A gap sets visiting workspaces apart from the monitor's own.
         Layout.leftMargin: firstGuest && !root.vertical ? Style.space(6) : 0
@@ -363,16 +365,16 @@ BarWidget {
 
               readonly property var info: root.appInfo(modelData.appId, modelData.title)
 
-              width: Style.space(16)
-              height: Style.space(16)
+              width: Style.space(root.iconSize)
+              height: Style.space(root.iconSize)
 
               Image {
                 id: iconImage
                 anchors.fill: parent
                 visible: info.source !== "" && status !== Image.Error
                 source: info.source
-                sourceSize.width: 32
-                sourceSize.height: 32
+                sourceSize.width: root.iconSize * 2
+                sourceSize.height: root.iconSize * 2
                 fillMode: Image.PreserveAspectFit
                 smooth: true
                 asynchronous: true
@@ -383,7 +385,7 @@ BarWidget {
                 visible: info.source === "" || iconImage.status === Image.Error
                 text: Model.fallbackLetter(info.name, modelData.appId)
                 color: Commons.Color.foreground
-                font.pixelSize: Style.space(11)
+                font.pixelSize: Style.space(Math.round(root.iconSize * 0.7))
               }
             }
           }

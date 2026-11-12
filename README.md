@@ -70,6 +70,7 @@ omarchy bar set devi.nyxiri-workspaces style kanji
 omarchy bar set devi.nyxiri-workspaces mode 5
 omarchy bar set devi.nyxiri-workspaces hideEmpty true
 omarchy bar set devi.nyxiri-workspaces style apps
+omarchy bar set devi.nyxiri-workspaces iconSize 20 --json
 ```
 
 ## Settings
@@ -80,6 +81,10 @@ Right-click the bar to open the Nyxiri settings card, **Workspaces** tab
 - **Mode** — Ten / Five / Active only.
 - **Style** — Numbers / Kanji / Pac-Man / Dots / Magic / Default / Aurora / Apps.
 - **Hide empty workspaces** — on or off.
+- **App icon size** — 12–24px, default 16. Only shows in the card while
+  the Apps style is picked; it does nothing in the other styles. The
+  `bar set` example above needs `--json`, or the value lands as a string
+  (the widget accepts both, the card slider writes a number).
 
 ## Tests
 

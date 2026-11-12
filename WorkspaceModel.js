@@ -83,6 +83,19 @@ function normalize(settings) {
 // "apps", instead of the marker; empty workspaces keep their number.
 var MAX_APPS = 6
 
+// App icon size, in logical pixels: 12-24, default 16. Accepts the string
+// form `omarchy bar set` stores without --json, like the boolean settings.
+var ICON_SIZE_DEFAULT = 16
+var ICON_SIZE_MIN = 12
+var ICON_SIZE_MAX = 24
+
+function clampIconSize(value) {
+  if (value === null || value === undefined) return ICON_SIZE_DEFAULT
+  var size = Number(value)
+  if (!Number.isFinite(size)) return ICON_SIZE_DEFAULT
+  return Math.max(ICON_SIZE_MIN, Math.min(ICON_SIZE_MAX, Math.round(size)))
+}
+
 function appKey(appId) {
   return String(appId || "").toLowerCase()
 }

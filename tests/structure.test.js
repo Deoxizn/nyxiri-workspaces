@@ -27,6 +27,7 @@ test("the widget reads mode, hideEmpty, and style from its layout entry", () => 
   // accepts "true" as well as true.
   assert.match(widget, /setting\("hideEmpty", false\) === "true"/)
   assert.match(widget, /setting\("style", "numbers"\)/)
+  assert.match(widget, /Model\.clampIconSize\(setting\("iconSize", 16\)\)/)
   assert.match(widget, /import "WorkspaceModel\.js" as Model/)
   assert.match(widget, /Model\.visibleIds\(root\.mode, root\.hideEmpty/)
   assert.match(widget, /Model\.markerFor\(root\.style, slot, shown, occupied\)/)
@@ -97,6 +98,10 @@ test("style apps renders one icon per app, icons only, and nothing else from Spa
   assert.match(widget, /Model\.webAppHost\(appId\)/)
   assert.match(widget, /s2\/favicons\?domain=/)
   assert.match(widget, /iconImage\.status === Image\.Error/)
+  // Icon size scales the cell, the icon, and its decode size.
+  assert.match(widget, /apps\.length \* \(root\.iconSize \+ 2\) \+ 8/)
+  assert.match(widget, /Style\.space\(root\.iconSize\)/)
+  assert.match(widget, /sourceSize\.width: root\.iconSize \* 2/)
   // The old showApps boolean is gone: apps is a style now.
   assert.doesNotMatch(widget, /showApps/)
 })

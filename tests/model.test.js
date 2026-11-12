@@ -155,6 +155,23 @@ const APP_VALUES = [
   ] }
 ]
 
+test("clampIconSize keeps 12-24, defaulting to 16", () => {
+  assert.equal(Model.clampIconSize(16), 16)
+  assert.equal(Model.clampIconSize(20), 20)
+  assert.equal(Model.clampIconSize(12), 12)
+  assert.equal(Model.clampIconSize(24), 24)
+  assert.equal(Model.clampIconSize(8), 12)
+  assert.equal(Model.clampIconSize(30), 24)
+  assert.equal(Model.clampIconSize("20"), 20)
+  assert.equal(Model.clampIconSize(17.6), 18)
+  assert.equal(Model.clampIconSize("nope"), 16)
+  assert.equal(Model.clampIconSize(null), 16)
+  assert.equal(Model.clampIconSize(undefined), 16)
+  assert.equal(Model.ICON_SIZE_DEFAULT, 16)
+  assert.equal(Model.ICON_SIZE_MIN, 12)
+  assert.equal(Model.ICON_SIZE_MAX, 24)
+})
+
 test("appsForWorkspace returns one entry per app, first-seen order, capped at six", () => {
   assert.deepEqual(Model.appsForWorkspace(3, APP_VALUES), [
     { appId: "firefox", title: "Mozilla Firefox" },
