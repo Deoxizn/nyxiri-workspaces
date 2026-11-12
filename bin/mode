@@ -44,6 +44,21 @@ set_flag() {
   fi
 }
 
+# Only one workspaces file is live at a time: the active mode's is .lua
+# and the other is .bak, so the dofile blocks in hyprland.lua load just
+# the one that matches the mode. Installed by scripts/setup-classic.sh;
+# if a file was never installed, its rename is a no-op.
+workspaces_dir="$HOME/.config/hypr"
+activate_workspaces() {
+  if [[ $1 == classic ]]; then
+    [[ -f $workspaces_dir/workspaces.lua ]] && mv "$workspaces_dir/workspaces.lua" "$workspaces_dir/workspaces.bak"
+    [[ -f $workspaces_dir/workspaces-classic.bak ]] && mv "$workspaces_dir/workspaces-classic.bak" "$workspaces_dir/workspaces-classic.lua"
+  else
+    [[ -f $workspaces_dir/workspaces-classic.lua ]] && mv "$workspaces_dir/workspaces-classic.lua" "$workspaces_dir/workspaces-classic.bak"
+    [[ -f $workspaces_dir/workspaces.bak ]] && mv "$workspaces_dir/workspaces.bak" "$workspaces_dir/workspaces.lua"
+  fi
+}
+
 # Switching modes moves workspaces between monitors, and Omarchy warps the
 # cursor on workspace changes and focus. The marker tells the Lua part to turn
 # warping off for this reload; afterwards the user's settings come back and the
@@ -80,6 +95,7 @@ wait_applied() {
 # $1 for the log, in English; $2 for the notification.
 give_up() {
   set_flag "$current"
+  activate_workspaces "$current"
   rm -f "$applied_file"
   hyprctl reload >/dev/null || true
   restore_cursor
@@ -114,6 +130,7 @@ renumbered() {
 [[ $want == 4.5 ]] && before_placement="$(placement)"
 
 set_flag "$want"
+activate_workspaces "$want"
 rm -f "$applied_file"
 [[ $want == classic ]] && want_name=Classic || want_name="4.5 Workspaces"
 hyprctl reload >/dev/null ||

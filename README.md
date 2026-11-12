@@ -71,13 +71,19 @@ above 10 only one with windows. The focused workspace always joins its
 monitor's row even when it falls outside that monitor's range. That field
 is the *display* split: which numbers each bar shows. It does not move
 workspaces. Super + 6 still opens workspace 6 on the focused monitor
-unless the workspace is pinned to a monitor, so the setup script also
-writes `~/.config/hypr/classic-workspaces-pinning.lua`: one
-`hl.workspace_rule` per workspace, binding it to its monitor, from the
-same ranges string. The classic Lua only loads that file in classic mode,
-so 4.5's per-monitor blocks are untouched. If the ranges change, re-run
-the setup script with the new string to regenerate the pinning, and set
-the card field to match.
+unless the workspace is pinned to a monitor, and that pinning lives in
+the two workspaces files the plugin ships, `hypr/workspaces.lua` (4.5)
+and `hypr/workspaces-classic.lua` (classic): each one pins its
+workspaces to their monitors with `default` and `persistent`, and holds
+the app and game workspace assignments that used to live in
+windowrules.lua. Only one is live at a time: the active mode's file is
+`.lua` and the other is renamed to `.bak`, flipped by `bin/mode` on
+every switch, so hyprland.lua loads just the one that matches the mode.
+The setup script installs both files into `~/.config/hypr/` and wires
+their loaders; edit the installed copies (or the plugin's, then
+re-install) to change a pin. The card's ranges field is the display
+split, the workspaces files are the Hyprland split, so keep them the
+same.
 
 Mode (Ten / Five / Active only) is just how many numbers show, not a
 per-monitor split: Five shows the first five slots, it does not mean
@@ -117,9 +123,11 @@ numbers, empty workspaces shown) and the settings are editable in
 `shell.json`, on the widget's own layout entry.
 
 Classic mode needs one extra one-time step: Hyprland has to load the
-bundled Lua. The plugin ships a script that appends the dofile block to
-the end of `~/.config/hypr/hyprland.lua` (backing it up first), skips
-itself if the block is already there, and reloads Hyprland:
+bundled Lua and the two workspaces files. The plugin ships a script that
+installs `hypr/workspaces.lua` and `hypr/workspaces-classic.lua` into
+`~/.config/hypr/`, appends the dofile block to the end of
+`~/.config/hypr/hyprland.lua` (backing it up first), skips itself if the
+block is already there, and reloads Hyprland:
 
 ```sh
 bash ~/.config/omarchy/plugins/devi.nyxiri-workspaces/scripts/setup-classic.sh

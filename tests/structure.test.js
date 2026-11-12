@@ -164,37 +164,77 @@ test("classic mode ships the Lua, the mode script, and its i18n catalog", () => 
   assert.equal(typeof catalog["notify.perMonitor"], "string")
 })
 
-test("the classic Lua loads the pinning file, in classic mode only", () => {
+test("the classic Lua loads no pinning: the workspaces files do that", () => {
   const lua = read("hypr/classic-workspaces.lua")
-  assert.match(lua, /classic-workspaces-pinning\.lua/)
-  assert.match(lua, /if file then file:close\(\); dofile\(pin\) end/)
-  // The pinning load sits after the flag check (record "4.5" returns
-  // before it) and before the reconcile no-op, so 4.5 never loads it.
-  const flagReturn = lua.indexOf('record("4.5")')
-  const pinLoad = lua.indexOf("classic-workspaces-pinning.lua")
-  const reconcile = lua.indexOf("function M.reconcile() end")
-  assert.ok(flagReturn !== -1 && pinLoad !== -1 && reconcile !== -1)
-  assert.ok(flagReturn < pinLoad && pinLoad < reconcile)
-  // The Lua itself hardcodes no rules; the generated pinning file has them.
-  // (The comment above mentions the rule name, so match the call form.)
+  // Pinning (which workspaces live on which monitor, and which apps open
+  // on which workspace) lives in the user's own workspaces.lua /
+  // workspaces-classic.lua in ~/.config/hypr/, loaded by hyprland.lua.
+  // This file does the bindings and the mode bookkeeping only.
+  assert.doesNotMatch(lua, /classic-workspaces-pinning\.lua/)
   assert.doesNotMatch(lua, /hl\.workspace_rule\(/)
+  assert.match(lua, /workspaces\.lua/)
+  assert.match(lua, /workspaces-classic\.lua/)
 })
 
-test("the setup script appends the Lua loader once, backs up, and reloads", () => {
+test("the plugin ships both workspaces files, from the user's own config", () => {
+  // They ship in the plugin (hypr/), written from his own workspaces.bak
+  // and windowrules, and setup installs them into ~/.config/hypr/.
+  const classic = read("hypr/workspaces-classic.lua")
+  assert.match(classic, /WS 1-5 on DP-1/)
+  assert.match(classic, /WS 6-10 on HDMI-A-1/)
+  assert.match(classic, /hl\.workspace_rule\(\{ workspace = tostring\(i\), monitor = "DP-1", default = true, persistent = true \}\)/)
+  assert.match(classic, /workspace = "1"/)
+  assert.match(classic, /workspace = "6"/)
+  assert.doesNotMatch(classic, /workspace = "1[1-9]"/)
+  // The header comment mentions the word; no rule sets a name.
+  assert.doesNotMatch(classic, /default_name = /)
+  const perMonitor = read("hypr/workspaces.lua")
+  assert.match(perMonitor, /WS 1-10 on HDMI-A-1/)
+  assert.match(perMonitor, /WS 11-20 on DP-1/)
+  assert.match(perMonitor, /workspace = "11"/)
+  assert.match(perMonitor, /workspace = "14"/)
+  assert.match(perMonitor, /workspace = "1"/)
+  // The header comment mentions the word; no rule sets a name.
+  assert.doesNotMatch(perMonitor, /default_name = /)
+})
+
+test("bin/mode flips which workspaces file is live on switch", () => {
+  const mode = read("bin/mode")
+  assert.match(mode, /activate_workspaces/)
+  assert.match(mode, /workspaces\.lua/)
+  assert.match(mode, /workspaces-classic\.lua/)
+  assert.match(mode, /workspaces\.bak/)
+  assert.match(mode, /workspaces-classic\.bak/)
+  // The flip runs with the flag change, before the reload, and give_up
+  // restores the old mode's file if the switch fails.
+  assert.match(mode, /activate_workspaces "\$want"/)
+  assert.match(mode, /activate_workspaces "\$current"/)
+})
+
+test("the setup script wires the loaders, flips the live file, and owns no workspaces file", () => {
   const setup = read("scripts/setup-classic.sh")
   assert.match(setup, /-- BEGIN devi\.nyxiri-workspaces/)
   assert.match(setup, /hypr\/classic-workspaces\.lua/)
+  assert.match(setup, /.config\/hypr\/workspaces\.lua/)
+  assert.match(setup, /.config\/hypr\/workspaces-classic\.lua/)
   assert.match(setup, /grep -Fq -- "\$marker" "\$conf"/)
   assert.match(setup, /\.bak\.\$\(date \+%s\)/)
+  // An old block (classic Lua only) is stripped and re-appended.
+  assert.match(setup, /sed -i '\/-- BEGIN devi\.nyxiri-workspaces\/,\/-- END devi\.nyxiri-workspaces\/d' "\$conf"/)
   assert.match(setup, /hyprctl reload/)
   assert.match(setup, /hyprctl configerrors/)
-  // Pinning: the script builds one hl.workspace_rule per workspace from
-  // the ranges, into a file the classic Lua loads, defaulting to his split.
-  assert.match(setup, /ranges="\$\{1:-DP-1:1-5,HDMI-A-1:6-10\}"/)
-  assert.match(setup, /classic-workspaces-pinning\.lua/)
-  assert.match(setup, /hl\.workspace_rule\(\{ workspace = /)
-  assert.match(setup, /, monitor = /)
-  assert.match(setup, /build_pinning "\$ranges" > "\$pin"/)
+  // The live file follows the current mode; the other is .bak.
+  assert.match(setup, /no-monitor-workspaces/)
+  assert.match(setup, /workspaces\.bak/)
+  assert.match(setup, /workspaces-classic\.bak/)
+  // The old generated pinning file is removed, superseded.
+  assert.match(setup, /rm -f "\$hypr_dir\/classic-workspaces-pinning\.lua"/)
+  // The two workspaces files ship in the plugin and are installed
+  // into ~/.config/hypr/ when missing; no ranges, no pinning generation.
+  assert.match(setup, /cp "\$plugin_dir\/hypr\/\$f" "\$hypr_dir\/\$f"/)
+  assert.doesNotMatch(setup, /build_pinning/)
+  assert.doesNotMatch(setup, /append_names/)
+  assert.doesNotMatch(setup, /ranges=/)
 })
 
 test("the widget reads the applied mode and the flag, and ranges from its layout entry", () => {
