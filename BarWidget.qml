@@ -153,6 +153,13 @@ BarWidget {
       else if (icon.charAt(0) === "/") source = Util.fileUrl(icon)
       else source = Quickshell.iconPath(icon, true)
     }
+    // Chromium --app windows with no desktop entry (link binds, not the
+    // webapp installer): the site's favicon, from Google's favicon
+    // service. If the fetch fails the delegate falls back to the letter.
+    if (source === "") {
+      var host = Model.webAppHost(appId)
+      if (host !== "") source = "https://www.google.com/s2/favicons?domain=" + host + "&sz=128"
+    }
     return { source: source, name: name }
   }
 
@@ -360,8 +367,9 @@ BarWidget {
               height: Style.space(16)
 
               Image {
+                id: iconImage
                 anchors.fill: parent
-                visible: info.source !== ""
+                visible: info.source !== "" && status !== Image.Error
                 source: info.source
                 sourceSize.width: 32
                 sourceSize.height: 32
@@ -372,7 +380,7 @@ BarWidget {
 
               Text {
                 anchors.centerIn: parent
-                visible: info.source === ""
+                visible: info.source === "" || iconImage.status === Image.Error
                 text: Model.fallbackLetter(info.name, modelData.appId)
                 color: Commons.Color.foreground
                 font.pixelSize: Style.space(11)

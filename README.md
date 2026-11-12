@@ -19,7 +19,10 @@ Hyprland workspace numbers for the Nyxiri bar, forked from stock Omarchy's
   bar, wider and brighter on the focused workspace), or **Apps** (the icons
   of the apps running on the workspace instead of the marker: icons only,
   no numbers, no counts, one icon per app, six at most; empty workspaces
-  keep their number, so the row stays clickable). Icons are display only:
+  keep their number, so the row stays clickable). Web apps opened from a
+  link bind have no desktop file, so they use the site's favicon, fetched
+  from Google's favicon service; if the fetch fails they show their first
+  letter instead. Icons are display only:
   clicking a cell still focuses the workspace, and hovering a cell shows
   the app names. This is the small core of
   [omarchy-spaces](https://github.com/tornikegomareli/omarchy-spaces):

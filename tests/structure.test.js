@@ -92,6 +92,11 @@ test("style apps renders one icon per app, icons only, and nothing else from Spa
   assert.doesNotMatch(widget, /agent/i)
   assert.doesNotMatch(widget, /preview/i)
   assert.doesNotMatch(widget, /focusWindow|activateWindow/)
+  // Web apps with no desktop entry use the site's favicon; a failed
+  // fetch falls back to the letter.
+  assert.match(widget, /Model\.webAppHost\(appId\)/)
+  assert.match(widget, /s2\/favicons\?domain=/)
+  assert.match(widget, /iconImage\.status === Image\.Error/)
   // The old showApps boolean is gone: apps is a style now.
   assert.doesNotMatch(widget, /showApps/)
 })
