@@ -3,7 +3,7 @@
 # modules here, so only parse errors count as failures.
 set -euo pipefail
 
-root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 cd -- "$root"
 
 fail=0

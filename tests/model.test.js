@@ -20,15 +20,16 @@ const VALUES = [
   { id: 15, windowCount: 0, monitorName: "HDMI-A-1" }
 ]
 
-test("normalize keeps the mode, hideEmpty, and style, defaulting to ten, shown, numbers", () => {
-  assert.deepEqual(Model.normalize({}), { mode: "10", hideEmpty: false, style: "numbers" })
-  assert.deepEqual(Model.normalize({ mode: "5", hideEmpty: true, style: "kanji" }), { mode: "5", hideEmpty: true, style: "kanji" })
-  assert.deepEqual(Model.normalize({ mode: "active", style: "pacman" }), { mode: "active", hideEmpty: false, style: "pacman" })
-  assert.deepEqual(Model.normalize({ style: "magic" }), { mode: "10", hideEmpty: false, style: "magic" })
-  assert.deepEqual(Model.normalize({ style: "default" }), { mode: "10", hideEmpty: false, style: "default" })
-  assert.deepEqual(Model.normalize({ style: "aurora" }), { mode: "10", hideEmpty: false, style: "aurora" })
-  assert.deepEqual(Model.normalize({ mode: "nope", hideEmpty: "yes", style: "nope" }), { mode: "10", hideEmpty: false, style: "numbers" })
-  assert.deepEqual(Model.normalize(null), { mode: "10", hideEmpty: false, style: "numbers" })
+test("normalize keeps the mode, hideEmpty, style, and showApps, defaulting to ten, shown, numbers, off", () => {
+  assert.deepEqual(Model.normalize({}), { mode: "10", hideEmpty: false, style: "numbers", showApps: false })
+  assert.deepEqual(Model.normalize({ mode: "5", hideEmpty: true, style: "kanji" }), { mode: "5", hideEmpty: true, style: "kanji", showApps: false })
+  assert.deepEqual(Model.normalize({ mode: "active", style: "pacman" }), { mode: "active", hideEmpty: false, style: "pacman", showApps: false })
+  assert.deepEqual(Model.normalize({ style: "magic" }), { mode: "10", hideEmpty: false, style: "magic", showApps: false })
+  assert.deepEqual(Model.normalize({ style: "default" }), { mode: "10", hideEmpty: false, style: "default", showApps: false })
+  assert.deepEqual(Model.normalize({ style: "aurora" }), { mode: "10", hideEmpty: false, style: "aurora", showApps: false })
+  assert.deepEqual(Model.normalize({ mode: "nope", hideEmpty: "yes", style: "nope", showApps: "yes" }), { mode: "10", hideEmpty: false, style: "numbers", showApps: false })
+  assert.deepEqual(Model.normalize({ showApps: true }), { mode: "10", hideEmpty: false, style: "numbers", showApps: true })
+  assert.deepEqual(Model.normalize(null), { mode: "10", hideEmpty: false, style: "numbers", showApps: false })
 })
 
 test("mode ten shows the whole block plus guests and the focused workspace", () => {
@@ -126,4 +127,77 @@ test("stateFor reports focused, occupied, and window count", () => {
   assert.deepEqual(Model.stateFor(1, VALUES, 3), { id: 1, focused: false, occupied: false, windowCount: 0 })
   assert.deepEqual(Model.stateFor(99, VALUES, 3), { id: 99, focused: false, occupied: false, windowCount: 0 })
   assert.deepEqual(Model.stateFor(0, VALUES, 3), { id: 0, focused: false, occupied: false, windowCount: 0 })
+})
+
+// Workspaces with the apps list the widget maps toplevels into. Workspace
+// 3 runs Firefox twice plus Files; 5 runs two shell-hosted apps under the
+// same org.quickshell id; 7 is empty; 9 runs eight distinct apps.
+const APP_VALUES = [
+  { id: 3, windowCount: 3, monitorName: "DP-1", apps: [
+    { appId: "firefox", title: "Mozilla Firefox" },
+    { appId: "org.gnome.Nautilus", title: "Files" },
+    { appId: "firefox", title: "Firefox - second window" }
+  ] },
+  { id: 5, windowCount: 2, monitorName: "DP-1", apps: [
+    { appId: "org.quickshell", title: "Omamail" },
+    { appId: "org.quickshell", title: "Settings" }
+  ] },
+  { id: 7, windowCount: 0, monitorName: "DP-1", apps: [] },
+  { id: 9, windowCount: 8, monitorName: "DP-1", apps: [
+    { appId: "a1", title: "" }, { appId: "a2", title: "" }, { appId: "a3", title: "" },
+    { appId: "a4", title: "" }, { appId: "a5", title: "" }, { appId: "a6", title: "" },
+    { appId: "a7", title: "" }, { appId: "a8", title: "" }
+  ] }
+]
+
+test("appsForWorkspace returns one entry per app, first-seen order, capped at six", () => {
+  assert.deepEqual(Model.appsForWorkspace(3, APP_VALUES), [
+    { appId: "firefox", title: "Mozilla Firefox" },
+    { appId: "org.gnome.Nautilus", title: "Files" }
+  ])
+  // Shell-hosted windows keep their own entries despite sharing an id.
+  assert.deepEqual(Model.appsForWorkspace(5, APP_VALUES), [
+    { appId: "org.quickshell", title: "Omamail" },
+    { appId: "org.quickshell", title: "Settings" }
+  ])
+  // Eight apps collapse to the first six.
+  assert.deepEqual(
+    Model.appsForWorkspace(9, APP_VALUES).map((a) => a.appId),
+    ["a1", "a2", "a3", "a4", "a5", "a6"]
+  )
+  assert.equal(Model.MAX_APPS, 6)
+  // Empty, missing, and app-less workspaces have no apps.
+  assert.deepEqual(Model.appsForWorkspace(7, APP_VALUES), [])
+  assert.deepEqual(Model.appsForWorkspace(99, APP_VALUES), [])
+  assert.deepEqual(Model.appsForWorkspace(3, VALUES), [])
+  assert.deepEqual(Model.appsForWorkspace(0, APP_VALUES), [])
+})
+
+test("appIdCandidates tries the id, its lowercase form, and the reverse-DNS tail", () => {
+  assert.deepEqual(Model.appIdCandidates("dev.example.my-tool"), ["dev.example.my-tool", "my-tool"])
+  assert.deepEqual(Model.appIdCandidates("Firefox"), ["Firefox", "firefox"])
+  assert.deepEqual(Model.appIdCandidates("org.gnome.Nautilus"), ["org.gnome.Nautilus", "org.gnome.nautilus", "Nautilus", "nautilus"])
+  assert.deepEqual(Model.appIdCandidates(""), [])
+})
+
+test("webAppHost pulls the host out of a Chromium --app class", () => {
+  assert.equal(Model.webAppHost("chrome-web.whatsapp.com__-Default"), "web.whatsapp.com")
+  assert.equal(Model.webAppHost("brave-app.hey.com__-Profile_1"), "app.hey.com")
+  assert.equal(Model.webAppHost("firefox"), "")
+  assert.equal(Model.webAppHost(""), "")
+})
+
+test("appLabel prefers the entry name, then the webapp host, then the reverse-DNS tail", () => {
+  assert.equal(Model.appLabel("Firefox", "firefox"), "Firefox")
+  assert.equal(Model.appLabel("", "org.omarchy.herdr"), "herdr")
+  assert.equal(Model.appLabel("", "chrome-discord.com__-Default"), "discord.com")
+  assert.equal(Model.appLabel("", "firefox"), "firefox")
+  assert.equal(Model.appLabel("", ""), "")
+})
+
+test("fallbackLetter is the first character of the label, uppercased", () => {
+  assert.equal(Model.fallbackLetter("Firefox", "firefox"), "F")
+  assert.equal(Model.fallbackLetter("", "org.omarchy.herdr"), "H")
+  assert.equal(Model.fallbackLetter("", "chrome-discord.com__-Default"), "D")
+  assert.equal(Model.fallbackLetter("", ""), "")
 })

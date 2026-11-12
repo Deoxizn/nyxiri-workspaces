@@ -18,15 +18,17 @@ test("the manifest declares the Nyxiri workspaces bar widget", () => {
   assert.equal(manifest.barWidget.allowMultiple, false)
 })
 
-test("the widget reads mode, hideEmpty, and style from its layout entry", () => {
+test("the widget reads mode, hideEmpty, style, and showApps from its layout entry", () => {
   const widget = read("BarWidget.qml")
   assert.match(widget, /moduleName: "devi\.nyxiri-workspaces"/)
   assert.match(widget, /setting\("mode", "10"\)/)
   assert.match(widget, /setting\("hideEmpty", false\)/)
   assert.match(widget, /setting\("style", "numbers"\)/)
+  assert.match(widget, /setting\("showApps", false\)/)
   assert.match(widget, /import "WorkspaceModel\.js" as Model/)
   assert.match(widget, /Model\.visibleIds\(root\.mode, root\.hideEmpty/)
   assert.match(widget, /Model\.markerFor\(root\.style, slot, shown, occupied\)/)
+  assert.match(widget, /Model\.appsForWorkspace\(modelData, root\.workspaceValues\)/)
   assert.match(widget, /Model\.stateFor\(modelData, root\.workspaceValues, root\.activeWorkspaceId\(\)\)/)
   assert.match(widget, /active: shown/)
 })
@@ -45,16 +47,16 @@ test("shape styles draw rectangles and leave the label empty", () => {
   // keeps the slot number as text and hides the label instead. Clearing
   // the text removed the whole widget.
   assert.match(widget, /text: root\.shapeStyle \? Model\.labelFor\(slot\) : Model\.markerFor\(root\.style, slot, shown, occupied\)/)
-  assert.match(widget, /labelVisible: !root\.shapeStyle/)
+  assert.match(widget, /labelVisible: !root\.shapeStyle && !showAppIcons/)
   assert.doesNotMatch(widget, /text: root\.shapeStyle \? ""/)
-  assert.match(widget, /fixedWidth: root\.vertical \? root\.barSize : Style\.space\(root\.shapeStyle \? 36 : 20\)/)
+  assert.match(widget, /fixedWidth: root\.vertical \? root\.barSize : Style\.space\(showAppIcons \? appCellSpan : \(root\.shapeStyle \? 36 : 20\)\)/)
   // Default: Shibumi's halo (34/16 wide, 16 tall) and pill marker (26/8 wide, 8 tall).
-  assert.match(widget, /visible: root\.style === "default"/)
+  assert.match(widget, /visible: root\.style === "default" && !showAppIcons/)
   assert.match(widget, /width: Style\.space\(shown \? 34 : 16\)/)
   assert.match(widget, /width: Style\.space\(shown \? 26 : 8\)/)
   assert.match(widget, /height: Style\.space\(8\)/)
   // Aurora: Shibumi's thin pill bar (28/6/4 wide, 3/6/4 tall).
-  assert.match(widget, /visible: root\.style === "aurora"/)
+  assert.match(widget, /visible: root\.style === "aurora" && !showAppIcons/)
   assert.match(widget, /width: Style\.space\(shown \? 28 : occupied \? 6 : 4\)/)
   assert.match(widget, /height: Style\.space\(shown \? 3 : occupied \? 6 : 4\)/)
   assert.match(widget, /opacity: shown \? 0\.92 : occupied \? 0\.62 : 0\.18/)
@@ -66,6 +68,28 @@ test("shape styles draw rectangles and leave the label empty", () => {
   // Shape styles are not dimmed a second time through the button, or
   // empty cells vanish and both shape styles read the same.
   assert.match(widget, /opacity: root\.shapeStyle \? 1 : \(occupied \|\| shown \? 1 : 0\.5\)/)
+})
+
+test("showApps renders one icon per app, icons only, and nothing else from Spaces", () => {
+  const widget = read("BarWidget.qml")
+  // The app id comes from the Wayland app id, else the IPC class.
+  assert.match(widget, /toplevel\.wayland && toplevel\.wayland\.appId/)
+  assert.match(widget, /ipc\["class"\]/)
+  // Icons resolve through the desktop entries and the icon theme.
+  assert.match(widget, /DesktopEntries\.byId\(/)
+  assert.match(widget, /DesktopEntries\.heuristicLookup\(appId\)/)
+  assert.match(widget, /Quickshell\.iconPath\(icon, true\)/)
+  // The cell shows a row of icons with a letter fallback, the marker hidden.
+  assert.match(widget, /readonly property var apps: root\.showApps \? Model\.appsForWorkspace\(modelData, root\.workspaceValues\) : \[\]/)
+  assert.match(widget, /readonly property bool showAppIcons: apps\.length > 0/)
+  assert.match(widget, /tooltipText: showAppIcons/)
+  assert.match(widget, /Model\.appLabel\(info\.name, a\.appId\)/)
+  assert.match(widget, /Model\.fallbackLetter\(info\.name, modelData\.appId\)/)
+  // No agent status, no previews, no per-window click: icons are display
+  // only, the click still focuses the workspace.
+  assert.doesNotMatch(widget, /agent/i)
+  assert.doesNotMatch(widget, /preview/i)
+  assert.doesNotMatch(widget, /focusWindow|activateWindow/)
 })
 
 test("the widget has no layout-glyph machinery left", () => {

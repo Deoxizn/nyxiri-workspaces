@@ -1,9 +1,9 @@
 .pragma library
 
 // Pure workspace math for the Nyxiri workspaces widget. Everything here
-// works on plain objects ({ id, windowCount, monitorName }) so node can
-// test it without Hyprland; BarWidget.qml maps Hyprland's live values into
-// that shape before calling in.
+// works on plain objects ({ id, windowCount, monitorName, apps: [{ appId,
+// title }] }) so node can test it without Hyprland; BarWidget.qml maps
+// Hyprland's live values into that shape before calling in.
 //
 // Modes, after Shibumi-Shell's visible-workspaces setting:
 //   "10"     this monitor's block of ten, always shown, plus any real
@@ -72,8 +72,94 @@ function normalize(settings) {
   return {
     mode: MODES.indexOf(String(raw.mode || "")) !== -1 ? String(raw.mode) : "10",
     hideEmpty: raw.hideEmpty === true,
-    style: STYLES.indexOf(String(raw.style || "")) !== -1 ? String(raw.style) : "numbers"
+    style: STYLES.indexOf(String(raw.style || "")) !== -1 ? String(raw.style) : "numbers",
+    showApps: raw.showApps === true
   }
+}
+
+// App icons, after omarchy-spaces: one icon per app running on a workspace,
+// no numbers, no counts, no agent badges. The widget shows these instead
+// of the marker on occupied workspaces; empty workspaces keep their marker.
+var MAX_APPS = 6
+
+function appKey(appId) {
+  return String(appId || "").toLowerCase()
+}
+
+// Lookup keys for an app id, most specific first. Reverse-DNS ids such as
+// "dev.example.my-tool" often ship a desktop file named after the last part.
+function appIdCandidates(appId) {
+  var id = String(appId || "")
+  if (id === "") return []
+  var out = [id]
+  function add(v) { if (v && out.indexOf(v) === -1) out.push(v) }
+  add(id.toLowerCase())
+  var dot = id.lastIndexOf(".")
+  if (dot > 0 && dot < id.length - 1) {
+    add(id.slice(dot + 1))
+    add(id.slice(dot + 1).toLowerCase())
+  }
+  return out
+}
+
+// Chromium-family --app windows use classes like
+// "chrome-web.whatsapp.com__-Default" or "brave-app.hey.com__-Profile_1".
+// Returns the host ("web.whatsapp.com") or "" when the class is not one.
+function webAppHost(appId) {
+  var m = /^(?:chrome|chromium|brave|msedge|vivaldi|helium|opera)-([^_]+?)(?:__|_).*-(?:Default|Profile_\d+)$/i.exec(String(appId || ""))
+  return m ? m[1] : ""
+}
+
+// The readable label for an app: its desktop-entry name when known, the
+// webapp host for a Chromium --app window, else the readable tail of a
+// reverse-DNS class, so org.omarchy.herdr reads "herdr" and not "org".
+function appLabel(name, appId) {
+  var label = String(name || "")
+  var id = String(appId || "")
+  if (label !== "") return label
+  var host = webAppHost(id)
+  if (host !== "") return host
+  var parts = id.split(".")
+  return parts.length > 1 ? parts[parts.length - 1] : id
+}
+
+// The letter to stand in for an app with no resolvable icon: the first
+// character of its label, uppercased. codePointAt keeps a surrogate pair
+// (an emoji first character) whole.
+function fallbackLetter(name, appId) {
+  var label = appLabel(name, appId)
+  var first = label.codePointAt(0)
+  return first === undefined ? "" : String.fromCodePoint(first).toUpperCase()
+}
+
+// The apps running on one workspace, one entry per app in first-seen
+// order, capped at MAX_APPS. The shell hosts more than one app under its
+// own id, so each of its windows keeps its own entry instead of
+// collapsing into one.
+function appsForWorkspace(idValue, values) {
+  var id = positiveId(idValue)
+  var source = values && typeof values.length === "number" ? values : []
+  var out = []
+  var seen = {}
+  for (var i = 0; i < source.length; i++) {
+    var entry = source[i] || {}
+    if (positiveId(entry.id) !== id) continue
+    var apps = entry.apps && typeof entry.apps.length === "number" ? entry.apps : []
+    for (var j = 0; j < apps.length; j++) {
+      var app = apps[j] || {}
+      var appId = String(app.appId || "")
+      if (!appId) continue
+      var key = appKey(appId) === "org.quickshell"
+        ? "org.quickshell\u0000" + String(app.title || "")
+        : appKey(appId)
+      if (seen[key]) continue
+      seen[key] = true
+      out.push({ appId: appId, title: String(app.title || "") })
+      if (out.length >= MAX_APPS) return out
+    }
+    return out
+  }
+  return out
 }
 
 function visibleIds(modeValue, hideEmpty, block, values, focusedId, monitorName) {
