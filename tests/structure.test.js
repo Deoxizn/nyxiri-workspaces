@@ -34,6 +34,14 @@ test("the widget reads mode, hideEmpty, and style from its layout entry", () => 
   assert.match(widget, /readonly property var apps: root\.style === "apps" \? Model\.appsForWorkspace\(modelData, root\.workspaceValues\) : \[\]/)
   assert.match(widget, /Model\.stateFor\(modelData, root\.workspaceValues, root\.activeWorkspaceId\(\)\)/)
   assert.match(widget, /active: shown/)
+  // Clicking the focused workspace cycles the layout, but only when the
+  // cycleLayoutOnClick setting is on: with it off a click on the focused
+  // workspace does nothing, so a double-click to focus can't change the
+  // layout. Same string-"true" coercion as hideEmpty, on by default.
+  assert.match(widget, /setting\("cycleLayoutOnClick", true\)/)
+  assert.match(widget, /setting\("cycleLayoutOnClick", true\) === "true"/)
+  assert.match(widget, /if \(shown && root\.cycleLayoutOnClick\) root\.cycleLayout\(\)/)
+  assert.match(widget, /else if \(!shown\) root\.focusWorkspace\(modelData\)/)
 })
 
 test("the focused cell gets a dark chip behind its marker, except in shape styles", () => {

@@ -20,6 +20,10 @@ import "WorkspaceModel.js" as Model
 //   iconSize   12-24, default 16       app icon size, apps style only
 //   ranges     "DP-1:1-5,HDMI-A-1:6-10" which workspaces each monitor shows,
 //              classic mode only; 0 means 10, so 6-0 is 6-10
+//   cycleLayoutOnClick true | false  clicking the focused workspace cycles
+//              tiling / scrolling / floating (as Super + L does). Turn it
+//              off and a click on the focused workspace does nothing, so a
+//              double-click to focus a workspace can't change the layout.
 // Classic mode (one global set 1-10, as in Omarchy 4.0.6) is not a setting
 // here: the widget reads what Hyprland applied, from the applied file the
 // bundled hypr/classic-workspaces.lua writes (else the flag file), and the
@@ -49,6 +53,10 @@ BarWidget {
   readonly property string ranges: String(setting("ranges", ""))
   readonly property var rangesMap: Model.parseRanges(root.ranges)
   readonly property var range: root.rangesMap[root.monitorName] || null
+  // Same string-"true" coercion as hideEmpty: `bar set` stores strings
+  // unless --json is passed. On by default, preserving the stock 4.5
+  // click-cycles-layout behaviour; turn it off in the settings card.
+  readonly property bool cycleLayoutOnClick: setting("cycleLayoutOnClick", true) === true || setting("cycleLayoutOnClick", true) === "true"
 
   // Classic vs 4.5 workspaces, after omarchy-classic-workspaces: the mode
   // the last config load applied, from hypr/classic-workspaces.lua, and the
@@ -528,8 +536,8 @@ BarWidget {
         fixedWidth: root.vertical ? root.barSize : Style.space(showAppIcons ? appCellSpan : (root.shapeStyle ? 36 : 20))
         fixedHeight: root.vertical ? (showAppIcons ? Style.space(appCellSpan) : root.barSize) : root.barSize
         onPressed: function() {
-          if (shown) root.cycleLayout()
-          else root.focusWorkspace(modelData)
+          if (shown && root.cycleLayoutOnClick) root.cycleLayout()
+          else if (!shown) root.focusWorkspace(modelData)
         }
         onWheelMoved: function(delta) { root.scrollWorkspaces(delta) }
       }
