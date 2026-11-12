@@ -172,6 +172,14 @@ test("clampIconSize keeps 12-24, defaulting to 16", () => {
   assert.equal(Model.ICON_SIZE_MAX, 24)
 })
 
+test("steamAppId pulls the numeric id out of a Steam game id", () => {
+  assert.equal(Model.steamAppId("steam_app_12345"), "12345")
+  assert.equal(Model.steamAppId("steam_app_battlenet"), "")
+  assert.equal(Model.steamAppId("firefox"), "")
+  assert.equal(Model.steamAppId(""), "")
+  assert.equal(Model.steamAppId(null), "")
+})
+
 test("appsForWorkspace returns one entry per app, first-seen order, capped at six", () => {
   assert.deepEqual(Model.appsForWorkspace(3, APP_VALUES), [
     { appId: "firefox", title: "Mozilla Firefox" },

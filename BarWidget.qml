@@ -150,6 +150,20 @@ BarWidget {
 
   function appInfo(appId, title) {
     var entry = root.findDesktopEntry(appId)
+    // A Steam/Proton game has no desktop entry under its steam_app id, and
+    // the id itself is meaningless ("steam_app_battlenet" would show as
+    // "S"). The window title is the game name, so try that as an entry
+    // name: a Battle.net or WoW desktop file resolves the real icon.
+    // heuristicLookup is fuzzy, so only take it when the name actually
+    // matches the title, or a wrong game's icon wins over the letter.
+    if (!entry && /^steam_app_/.test(appId) && title) {
+      var byTitle = DesktopEntries.heuristicLookup(title)
+      if (byTitle && byTitle.name) {
+        var want = String(title).toLowerCase()
+        var got = String(byTitle.name).toLowerCase()
+        if (want === got || want.indexOf(got) !== -1) entry = byTitle
+      }
+    }
     var name = entry && entry.name ? String(entry.name) : ""
     var icon = entry && entry.icon ? String(entry.icon) : String(appId || "")
     var source = ""
@@ -158,6 +172,13 @@ BarWidget {
       else if (icon.charAt(0) === "/") source = Util.fileUrl(icon)
       else source = Quickshell.iconPath(icon, true)
     }
+    // A Steam library game with a numeric id: the icon Steam cached for
+    // it in librarycache. A missing file just errors the Image and the
+    // delegate falls back to the letter.
+    if (source === "") {
+      var steamId = Model.steamAppId(appId)
+      if (steamId !== "") source = "file://" + (Quickshell.env("HOME") || "") + "/.local/share/Steam/appcache/librarycache/" + steamId + "_icon.jpg"
+    }
     // Chromium --app windows with no desktop entry (link binds, not the
     // webapp installer): the site's favicon, from Google's favicon
     // service. If the fetch fails the delegate falls back to the letter.
@@ -165,6 +186,9 @@ BarWidget {
       var host = Model.webAppHost(appId)
       if (host !== "") source = "https://www.google.com/s2/favicons?domain=" + host + "&sz=128"
     }
+    // No entry name: for a Steam game the title is the label, so WoW
+    // shows "W" with a "World of Warcraft" tooltip instead of "S".
+    if (name === "" && /^steam_app_/.test(appId) && title) name = String(title)
     return { source: source, name: name }
   }
 

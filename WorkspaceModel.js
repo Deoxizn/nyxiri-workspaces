@@ -102,6 +102,14 @@ function appKey(appId) {
 
 // Lookup keys for an app id, most specific first. Reverse-DNS ids such as
 // "dev.example.my-tool" often ship a desktop file named after the last part.
+// A Steam/Proton game id: steam_app_<appid> for library games (numeric),
+// steam_app_<name> for a shortcut added by hand (Battle.net). Only the
+// numeric form has an icon Steam cached to fetch.
+function steamAppId(appId) {
+  var match = /^steam_app_(\d+)$/.exec(String(appId || ""))
+  return match ? match[1] : ""
+}
+
 function appIdCandidates(appId) {
   var id = String(appId || "")
   if (id === "") return []

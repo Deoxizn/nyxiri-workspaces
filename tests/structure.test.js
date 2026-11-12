@@ -107,6 +107,15 @@ test("style apps renders one icon per app, icons only, and nothing else from Spa
   assert.match(widget, /visible: root\.style === "apps" && root\.vertical && index < root\.workspaceIds\(\)\.length - 1/)
   assert.match(widget, /height: parent\.height \* 0\.55/)
   assert.match(widget, /width: parent\.width \* 0\.55/)
+  // A Steam/Proton game has no desktop entry under its steam_app id, so
+  // the title is the label (WoW shows "W", not "S"), a desktop entry
+  // named for the game resolves its real icon, and a numeric library
+  // game uses the icon Steam cached.
+  assert.match(widget, /DesktopEntries\.heuristicLookup\(title\)/)
+  assert.match(widget, /Model\.steamAppId\(appId\)/)
+  assert.match(widget, /librarycache\//)
+  assert.match(widget, /_icon\.jpg/)
+  assert.match(widget, /if \(name === "" && \/\^steam_app_\/\.test\(appId\) && title\) name = String\(title\)/)
   // The old showApps boolean is gone: apps is a style now.
   assert.doesNotMatch(widget, /showApps/)
 })
