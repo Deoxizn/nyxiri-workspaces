@@ -176,26 +176,32 @@ test("the classic Lua loads no pinning: the workspaces files do that", () => {
   assert.match(lua, /workspaces-classic\.lua/)
 })
 
-test("the plugin ships both workspaces files, from the user's own config", () => {
-  // They ship in the plugin (hypr/), written from his own workspaces.bak
-  // and windowrules, and setup installs them into ~/.config/hypr/.
+test("the plugin ships both workspaces files as generic templates", () => {
+  // The live rules are generic (no monitor or app names); the personal
+  // setup is kept as commented examples underneath. Strip the comment
+  // lines and the active file must name nothing personal.
+  const active = (text) => text.split("\n").filter((l) => !/^\s*--/.test(l)).join("\n")
   const classic = read("hypr/workspaces-classic.lua")
-  assert.match(classic, /WS 1-5 on DP-1/)
-  assert.match(classic, /WS 6-10 on HDMI-A-1/)
-  assert.match(classic, /hl\.workspace_rule\(\{ workspace = tostring\(i\), monitor = "DP-1", default = true, persistent = true \}\)/)
-  assert.match(classic, /workspace = "1"/)
-  assert.match(classic, /workspace = "6"/)
-  assert.doesNotMatch(classic, /workspace = "1[1-9]"/)
-  // The header comment mentions the word; no rule sets a name.
-  assert.doesNotMatch(classic, /default_name = /)
+  const classicActive = active(classic)
+  assert.match(classicActive, /for i = 1, 10 do/)
+  assert.match(classicActive, /hl\.workspace_rule\(\{ workspace = tostring\(i\), default = true, persistent = true \}\)/)
+  assert.doesNotMatch(classicActive, /monitor = "/)
+  assert.doesNotMatch(classicActive, /brave-origin|Strata|Spotify|vesktop|discord|messenger|muse|gemini|chatgpt|xbox|steam_app/)
+  // The personal setup survives as commented examples, not live rules.
+  assert.match(classic, /--.*monitor = "DP-1"/)
+  assert.match(classic, /--.*monitor = "HDMI-A-1"/)
+  assert.match(classic, /--.*brave-origin/)
+  assert.match(classic, /--.*workspace = "6"/)
   const perMonitor = read("hypr/workspaces.lua")
-  assert.match(perMonitor, /WS 1-10 on HDMI-A-1/)
-  assert.match(perMonitor, /WS 11-20 on DP-1/)
-  assert.match(perMonitor, /workspace = "11"/)
-  assert.match(perMonitor, /workspace = "14"/)
-  assert.match(perMonitor, /workspace = "1"/)
-  // The header comment mentions the word; no rule sets a name.
-  assert.doesNotMatch(perMonitor, /default_name = /)
+  const perMonitorActive = active(perMonitor)
+  assert.match(perMonitorActive, /for i = 1, 20 do/)
+  assert.match(perMonitorActive, /hl\.workspace_rule\(\{ workspace = tostring\(i\), default = true, persistent = true \}\)/)
+  assert.doesNotMatch(perMonitorActive, /monitor = "/)
+  assert.doesNotMatch(perMonitorActive, /brave-origin|Strata|Spotify|vesktop|discord|messenger|muse|gemini|chatgpt|xbox|steam_app/)
+  assert.match(perMonitor, /--.*monitor = "DP-1"/)
+  assert.match(perMonitor, /--.*monitor = "HDMI-A-1"/)
+  assert.match(perMonitor, /--.*workspace = "11"/)
+  assert.match(perMonitor, /--.*workspace = "14"/)
 })
 
 test("bin/mode flips which workspaces file is live on switch", () => {

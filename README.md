@@ -73,17 +73,19 @@ is the *display* split: which numbers each bar shows. It does not move
 workspaces. Super + 6 still opens workspace 6 on the focused monitor
 unless the workspace is pinned to a monitor, and that pinning lives in
 the two workspaces files the plugin ships, `hypr/workspaces.lua` (4.5)
-and `hypr/workspaces-classic.lua` (classic): each one pins its
-workspaces to their monitors with `default` and `persistent`, and holds
-the app and game workspace assignments that used to live in
-windowrules.lua. Only one is live at a time: the active mode's file is
-`.lua` and the other is renamed to `.bak`, flipped by `bin/mode` on
-every switch, so hyprland.lua loads just the one that matches the mode.
-The setup script installs both files into `~/.config/hypr/` and wires
-their loaders; edit the installed copies (or the plugin's, then
-re-install) to change a pin. The card's ranges field is the display
-split, the workspaces files are the Hyprland split, so keep them the
-same.
+and `hypr/workspaces-classic.lua` (classic), which hold the app and game
+workspace assignments that used to live in windowrules.lua. They ship
+as generic templates: the live rules only make the workspaces exist
+(`default` and `persistent`, no monitor or app names), and the personal
+setup (monitor pinning, app and game pins) is kept underneath as
+commented examples to uncomment and edit for your own monitors and apps.
+Only one file is live at a time: the active mode's file is `.lua` and
+the other is renamed to `.bak`, flipped by `bin/mode` on every switch,
+so hyprland.lua loads just the one that matches the mode. The setup
+script installs both files into `~/.config/hypr/` and wires their
+loaders; edit the installed copies to change a pin. The card's ranges
+field is the display split, the workspaces files are the Hyprland split,
+so keep them the same.
 
 Mode (Ten / Five / Active only) is just how many numbers show, not a
 per-monitor split: Five shows the first five slots, it does not mean
