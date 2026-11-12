@@ -9,23 +9,27 @@ import qs.Ui
 import "WorkspaceModel.js" as Model
 
 // Nyxiri workspaces: stock Omarchy's per-monitor workspace numbers, with
-// four settings of its own (read from this widget's shell.json layout entry,
+// three settings of its own (read from this widget's shell.json layout entry,
 // edited in the Nyxiri settings card):
 //   mode       "10" | "5" | "active"   how many numbers show (Shibumi-style)
 //   hideEmpty  true | false            hide workspaces with no windows
 //   style      numbers | kanji | pacman | dots | magic | default | aurora
-//   showApps   true | false            occupied cells show the icons of the
-//                                       apps running on them instead of the
-//                                       marker: icons only, no numbers, no
-//                                       counts. Empty cells keep the marker.
+//              | apps      apps shows the icons of the apps running on a
+//                          workspace instead of its marker: icons only, no
+//                          numbers, no counts. Empty cells keep the marker.
+// The focused workspace always stays, even when it is empty. The widget
+// paints no background of its own; the bar's pill is the background.
 BarWidget {
   id: root
   moduleName: "devi.nyxiri-workspaces"
 
   readonly property string mode: String(setting("mode", "10"))
-  readonly property bool hideEmpty: setting("hideEmpty", false) === true
+  // `omarchy bar set` stores values as strings unless --json is passed, so
+  // a boolean set from the command line arrives as "true", not true. Accept
+  // both, or the documented `bar set ... hideEmpty true` silently does
+  // nothing.
+  readonly property bool hideEmpty: setting("hideEmpty", false) === true || setting("hideEmpty", false) === "true"
   readonly property string style: String(setting("style", "numbers"))
-  readonly property bool showApps: setting("showApps", false) === true
 
   // Default and aurora draw shapes instead of text, so their cells are
   // wider (Shibumi's default halo is 34 wide) and the label stays empty.
@@ -246,11 +250,11 @@ BarWidget {
         readonly property bool firstGuest: root.blockOf(modelData) !== root.block && index > 0 && root.blockOf(root.workspaceIds()[index - 1]) === root.block
         required property int index
 
-        // One icon per app on this workspace, when showApps is on. Icons
+        // One icon per app on this workspace, when the style is apps. Icons
         // only: no numbers, no counts. Empty workspaces have no apps, so
-        // they keep their marker. A cell's icons span 16px each with a 2px
+        // they keep their number. A cell's icons span 16px each with a 2px
         // gap, plus 8px of padding.
-        readonly property var apps: root.showApps ? Model.appsForWorkspace(modelData, root.workspaceValues) : []
+        readonly property var apps: root.style === "apps" ? Model.appsForWorkspace(modelData, root.workspaceValues) : []
         readonly property bool showAppIcons: apps.length > 0
         readonly property int appCellSpan: showAppIcons ? apps.length * 18 + 8 : 0
 

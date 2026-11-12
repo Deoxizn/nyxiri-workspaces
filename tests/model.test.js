@@ -20,16 +20,16 @@ const VALUES = [
   { id: 15, windowCount: 0, monitorName: "HDMI-A-1" }
 ]
 
-test("normalize keeps the mode, hideEmpty, style, and showApps, defaulting to ten, shown, numbers, off", () => {
-  assert.deepEqual(Model.normalize({}), { mode: "10", hideEmpty: false, style: "numbers", showApps: false })
-  assert.deepEqual(Model.normalize({ mode: "5", hideEmpty: true, style: "kanji" }), { mode: "5", hideEmpty: true, style: "kanji", showApps: false })
-  assert.deepEqual(Model.normalize({ mode: "active", style: "pacman" }), { mode: "active", hideEmpty: false, style: "pacman", showApps: false })
-  assert.deepEqual(Model.normalize({ style: "magic" }), { mode: "10", hideEmpty: false, style: "magic", showApps: false })
-  assert.deepEqual(Model.normalize({ style: "default" }), { mode: "10", hideEmpty: false, style: "default", showApps: false })
-  assert.deepEqual(Model.normalize({ style: "aurora" }), { mode: "10", hideEmpty: false, style: "aurora", showApps: false })
-  assert.deepEqual(Model.normalize({ mode: "nope", hideEmpty: "yes", style: "nope", showApps: "yes" }), { mode: "10", hideEmpty: false, style: "numbers", showApps: false })
-  assert.deepEqual(Model.normalize({ showApps: true }), { mode: "10", hideEmpty: false, style: "numbers", showApps: true })
-  assert.deepEqual(Model.normalize(null), { mode: "10", hideEmpty: false, style: "numbers", showApps: false })
+test("normalize keeps the mode, hideEmpty, and style, defaulting to ten, shown, numbers", () => {
+  assert.deepEqual(Model.normalize({}), { mode: "10", hideEmpty: false, style: "numbers" })
+  assert.deepEqual(Model.normalize({ mode: "5", hideEmpty: true, style: "kanji" }), { mode: "5", hideEmpty: true, style: "kanji" })
+  assert.deepEqual(Model.normalize({ mode: "active", style: "pacman" }), { mode: "active", hideEmpty: false, style: "pacman" })
+  assert.deepEqual(Model.normalize({ style: "magic" }), { mode: "10", hideEmpty: false, style: "magic" })
+  assert.deepEqual(Model.normalize({ style: "default" }), { mode: "10", hideEmpty: false, style: "default" })
+  assert.deepEqual(Model.normalize({ style: "aurora" }), { mode: "10", hideEmpty: false, style: "aurora" })
+  assert.deepEqual(Model.normalize({ style: "apps" }), { mode: "10", hideEmpty: false, style: "apps" })
+  assert.deepEqual(Model.normalize({ mode: "nope", hideEmpty: "yes", style: "nope" }), { mode: "10", hideEmpty: false, style: "numbers" })
+  assert.deepEqual(Model.normalize(null), { mode: "10", hideEmpty: false, style: "numbers" })
 })
 
 test("mode ten shows the whole block plus guests and the focused workspace", () => {
@@ -108,6 +108,10 @@ test("markerFor renders every style by state", () => {
   assert.equal(Model.markerFor("default", 2, false, false), "")
   assert.equal(Model.markerFor("aurora", 2, true, true), "")
   assert.equal(Model.markerFor("aurora", 2, false, true), "")
+  // Apps shows the number as its label: occupied cells show the icons
+  // instead and hide the label, empty cells keep their number.
+  assert.equal(Model.markerFor("apps", 3, false, false), "3")
+  assert.equal(Model.markerFor("apps", 10, true, true), "0")
 })
 
 test("markerKind splits text styles from shape styles", () => {
@@ -118,6 +122,7 @@ test("markerKind splits text styles from shape styles", () => {
   assert.equal(Model.markerKind("magic"), "text")
   assert.equal(Model.markerKind("default"), "shape")
   assert.equal(Model.markerKind("aurora"), "shape")
+  assert.equal(Model.markerKind("apps"), "text")
   assert.equal(Model.markerKind("nope"), "text")
   assert.equal(Model.markerKind(undefined), "text")
 })

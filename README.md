@@ -1,7 +1,7 @@
 # Nyxiri workspaces
 
 Hyprland workspace numbers for the Nyxiri bar, forked from stock Omarchy's
-`omarchy.workspaces` with four settings of its own:
+`omarchy.workspaces` with three settings of its own:
 
 - **Mode** — how many numbers show, Shibumi-style: **Ten** (the monitor's
   whole block of ten), **Five** (only the first five slots guaranteed), or
@@ -9,26 +9,25 @@ Hyprland workspace numbers for the Nyxiri bar, forked from stock Omarchy's
 - **Hide empty workspaces** — drops workspaces with no windows from the row.
   The focused workspace always stays, even when it is empty, so you never
   lose your place.
-- **Show app icons** — occupied workspaces show the icons of the apps
-  running on them instead of the marker: icons only, no numbers, no
-  counts, one icon per app (six at most). Empty workspaces keep their
-  marker, so the row stays clickable. Icons are display only: clicking a
-  cell still focuses the workspace, and hovering a cell shows the app
-  names. This is the small core of
-  [omarchy-spaces](https://github.com/tornikegomareli/omarchy-spaces):
-  no agent status, no previews, no per-window click.
 - **Style** — what each workspace shows, after Shibumi-Shell's marker
   picker: **Numbers** (the slot, `0` for ten), **Kanji**
   (一二三四五六七八九十), **Pac-Man** (Pac-Man on the focused workspace, a
   ghost where windows live, a pellet on empty ones), **Dots** (filled for
   focused, ringed for occupied, hollow for empty), **Magic** (a star that
   fills, hollows, or shrinks to a pellet), **Default** (a soft halo behind
-  every cell with a small pill marker inside), or **Aurora** (a thin pill
-  bar, wider and brighter on the focused workspace). The focused marker
+  every cell with a small pill marker inside), **Aurora** (a thin pill
+  bar, wider and brighter on the focused workspace), or **Apps** (the icons
+  of the apps running on the workspace instead of the marker: icons only,
+  no numbers, no counts, one icon per app, six at most; empty workspaces
+  keep their number, so the row stays clickable). Icons are display only:
+  clicking a cell still focuses the workspace, and hovering a cell shows
+  the app names. This is the small core of
+  [omarchy-spaces](https://github.com/tornikegomareli/omarchy-spaces):
+  no agent status, no previews, no per-window click. The focused marker
   renders in the bar's active color, on a dark chip behind the cell so the
   active workspace stands out at a glance (shape styles carry their own
   focused signal instead of the chip: default's halo, aurora's wide bar).
-  Numbers, kanji, Pac-Man, dots, and magic are
+  Numbers, kanji, Pac-Man, dots, magic, and apps are
   text; default and aurora are drawn shapes, so their cells are wider.
 
 Anything else is stock behavior: click a marker to focus that workspace,
@@ -67,7 +66,7 @@ numbers, empty workspaces shown) and the settings are editable in
 omarchy bar set devi.nyxiri-workspaces style kanji
 omarchy bar set devi.nyxiri-workspaces mode 5
 omarchy bar set devi.nyxiri-workspaces hideEmpty true
-omarchy bar set devi.nyxiri-workspaces showApps true
+omarchy bar set devi.nyxiri-workspaces style apps
 ```
 
 ## Settings
@@ -76,10 +75,8 @@ Right-click the bar to open the Nyxiri settings card, **Workspaces** tab
 (it only offers controls while this widget is on the bar):
 
 - **Mode** — Ten / Five / Active only.
-- **Style** — Numbers / Kanji / Pac-Man / Dots / Magic / Default / Aurora.
+- **Style** — Numbers / Kanji / Pac-Man / Dots / Magic / Default / Aurora / Apps.
 - **Hide empty workspaces** — on or off.
-- **Show app icons** — on or off. No control for it in the settings card
-  yet, so the `omarchy bar set` command above is the switch for now.
 
 ## Tests
 

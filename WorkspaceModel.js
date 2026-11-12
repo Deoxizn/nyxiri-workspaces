@@ -24,8 +24,10 @@ var SLOTS = 10
 // magic is a star that fills, hollows, or shrinks to a pellet. Default
 // and aurora are shapes, not text: the delegate draws them as rectangles
 // (a pill halo and marker, an aurora bar), so markerFor returns "" for
-// those and markerKind tells the delegate which path to take.
-var STYLES = ["numbers", "kanji", "pacman", "dots", "magic", "default", "aurora"]
+// those and markerKind tells the delegate which path to take. Apps is
+// text too, and markerFor returns the number for it: occupied cells show
+// the app icons instead of the label, empty cells keep their number.
+var STYLES = ["numbers", "kanji", "pacman", "dots", "magic", "default", "aurora", "apps"]
 var SHAPE_STYLES = ["default", "aurora"]
 var KANJI = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
 var PACMAN_GLYPH = String.fromCodePoint(0xF0BAF) // nf-md-pac_man
@@ -72,14 +74,13 @@ function normalize(settings) {
   return {
     mode: MODES.indexOf(String(raw.mode || "")) !== -1 ? String(raw.mode) : "10",
     hideEmpty: raw.hideEmpty === true,
-    style: STYLES.indexOf(String(raw.style || "")) !== -1 ? String(raw.style) : "numbers",
-    showApps: raw.showApps === true
+    style: STYLES.indexOf(String(raw.style || "")) !== -1 ? String(raw.style) : "numbers"
   }
 }
 
 // App icons, after omarchy-spaces: one icon per app running on a workspace,
-// no numbers, no counts, no agent badges. The widget shows these instead
-// of the marker on occupied workspaces; empty workspaces keep their marker.
+// no numbers, no counts, no agent badges. They show when the style is
+// "apps", instead of the marker; empty workspaces keep their number.
 var MAX_APPS = 6
 
 function appKey(appId) {

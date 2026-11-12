@@ -18,17 +18,19 @@ test("the manifest declares the Nyxiri workspaces bar widget", () => {
   assert.equal(manifest.barWidget.allowMultiple, false)
 })
 
-test("the widget reads mode, hideEmpty, style, and showApps from its layout entry", () => {
+test("the widget reads mode, hideEmpty, and style from its layout entry", () => {
   const widget = read("BarWidget.qml")
   assert.match(widget, /moduleName: "devi\.nyxiri-workspaces"/)
   assert.match(widget, /setting\("mode", "10"\)/)
   assert.match(widget, /setting\("hideEmpty", false\)/)
+  // `bar set` stores booleans as strings without --json, so hideEmpty
+  // accepts "true" as well as true.
+  assert.match(widget, /setting\("hideEmpty", false\) === "true"/)
   assert.match(widget, /setting\("style", "numbers"\)/)
-  assert.match(widget, /setting\("showApps", false\)/)
   assert.match(widget, /import "WorkspaceModel\.js" as Model/)
   assert.match(widget, /Model\.visibleIds\(root\.mode, root\.hideEmpty/)
   assert.match(widget, /Model\.markerFor\(root\.style, slot, shown, occupied\)/)
-  assert.match(widget, /Model\.appsForWorkspace\(modelData, root\.workspaceValues\)/)
+  assert.match(widget, /readonly property var apps: root\.style === "apps" \? Model\.appsForWorkspace\(modelData, root\.workspaceValues\) : \[\]/)
   assert.match(widget, /Model\.stateFor\(modelData, root\.workspaceValues, root\.activeWorkspaceId\(\)\)/)
   assert.match(widget, /active: shown/)
 })
@@ -70,7 +72,7 @@ test("shape styles draw rectangles and leave the label empty", () => {
   assert.match(widget, /opacity: root\.shapeStyle \? 1 : \(occupied \|\| shown \? 1 : 0\.5\)/)
 })
 
-test("showApps renders one icon per app, icons only, and nothing else from Spaces", () => {
+test("style apps renders one icon per app, icons only, and nothing else from Spaces", () => {
   const widget = read("BarWidget.qml")
   // The app id comes from the Wayland app id, else the IPC class.
   assert.match(widget, /toplevel\.wayland && toplevel\.wayland\.appId/)
@@ -80,7 +82,7 @@ test("showApps renders one icon per app, icons only, and nothing else from Space
   assert.match(widget, /DesktopEntries\.heuristicLookup\(appId\)/)
   assert.match(widget, /Quickshell\.iconPath\(icon, true\)/)
   // The cell shows a row of icons with a letter fallback, the marker hidden.
-  assert.match(widget, /readonly property var apps: root\.showApps \? Model\.appsForWorkspace\(modelData, root\.workspaceValues\) : \[\]/)
+  assert.match(widget, /readonly property var apps: root\.style === "apps" \? Model\.appsForWorkspace\(modelData, root\.workspaceValues\) : \[\]/)
   assert.match(widget, /readonly property bool showAppIcons: apps\.length > 0/)
   assert.match(widget, /tooltipText: showAppIcons/)
   assert.match(widget, /Model\.appLabel\(info\.name, a\.appId\)/)
@@ -90,6 +92,8 @@ test("showApps renders one icon per app, icons only, and nothing else from Space
   assert.doesNotMatch(widget, /agent/i)
   assert.doesNotMatch(widget, /preview/i)
   assert.doesNotMatch(widget, /focusWindow|activateWindow/)
+  // The old showApps boolean is gone: apps is a style now.
+  assert.doesNotMatch(widget, /showApps/)
 })
 
 test("the widget has no layout-glyph machinery left", () => {
