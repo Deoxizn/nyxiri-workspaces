@@ -164,6 +164,22 @@ test("classic mode ships the Lua, the mode script, and its i18n catalog", () => 
   assert.equal(typeof catalog["notify.perMonitor"], "string")
 })
 
+test("the classic Lua loads the pinning file, in classic mode only", () => {
+  const lua = read("hypr/classic-workspaces.lua")
+  assert.match(lua, /classic-workspaces-pinning\.lua/)
+  assert.match(lua, /if file then file:close\(\); dofile\(pin\) end/)
+  // The pinning load sits after the flag check (record "4.5" returns
+  // before it) and before the reconcile no-op, so 4.5 never loads it.
+  const flagReturn = lua.indexOf('record("4.5")')
+  const pinLoad = lua.indexOf("classic-workspaces-pinning.lua")
+  const reconcile = lua.indexOf("function M.reconcile() end")
+  assert.ok(flagReturn !== -1 && pinLoad !== -1 && reconcile !== -1)
+  assert.ok(flagReturn < pinLoad && pinLoad < reconcile)
+  // The Lua itself hardcodes no rules; the generated pinning file has them.
+  // (The comment above mentions the rule name, so match the call form.)
+  assert.doesNotMatch(lua, /hl\.workspace_rule\(/)
+})
+
 test("the setup script appends the Lua loader once, backs up, and reloads", () => {
   const setup = read("scripts/setup-classic.sh")
   assert.match(setup, /-- BEGIN devi\.nyxiri-workspaces/)
@@ -172,6 +188,13 @@ test("the setup script appends the Lua loader once, backs up, and reloads", () =
   assert.match(setup, /\.bak\.\$\(date \+%s\)/)
   assert.match(setup, /hyprctl reload/)
   assert.match(setup, /hyprctl configerrors/)
+  // Pinning: the script builds one hl.workspace_rule per workspace from
+  // the ranges, into a file the classic Lua loads, defaulting to his split.
+  assert.match(setup, /ranges="\$\{1:-DP-1:1-5,HDMI-A-1:6-10\}"/)
+  assert.match(setup, /classic-workspaces-pinning\.lua/)
+  assert.match(setup, /hl\.workspace_rule\(\{ workspace = /)
+  assert.match(setup, /, monitor = /)
+  assert.match(setup, /build_pinning "\$ranges" > "\$pin"/)
 })
 
 test("the widget reads the applied mode and the flag, and ranges from its layout entry", () => {

@@ -68,7 +68,20 @@ DP-1:1-5,HDMI-A-1:6-10
 single id works too (`DP-1:3`), and a monitor with no entry falls back to
 the classic rule: 1-5 plus any other existing workspace up to 10, and
 above 10 only one with windows. The focused workspace always joins its
-monitor's row even when it falls outside that monitor's range. The
+monitor's row even when it falls outside that monitor's range. That field
+is the *display* split: which numbers each bar shows. It does not move
+workspaces. Super + 6 still opens workspace 6 on the focused monitor
+unless the workspace is pinned to a monitor, so the setup script also
+writes `~/.config/hypr/classic-workspaces-pinning.lua`: one
+`hl.workspace_rule` per workspace, binding it to its monitor, from the
+same ranges string. The classic Lua only loads that file in classic mode,
+so 4.5's per-monitor blocks are untouched. If the ranges change, re-run
+the setup script with the new string to regenerate the pinning, and set
+the card field to match.
+
+Mode (Ten / Five / Active only) is just how many numbers show, not a
+per-monitor split: Five shows the first five slots, it does not mean
+five per monitor. The split is the ranges field above. The
 toggle is also available from the command line:
 
 ```sh
