@@ -18,6 +18,9 @@ import "WorkspaceModel.js" as Model
 //                          workspace instead of its marker: icons only, no
 //                          numbers, no counts. Empty cells keep the marker.
 //   iconSize   12-24, default 16       app icon size, apps style only
+// In the apps style a thin divider separates the cells, so adjacent
+// workspaces running the same app don't read as one. The ○ was
+// considered; a line doesn't pretend to be a workspace.
 // The focused workspace always stays, even when it is empty. The widget
 // paints no background of its own; the bar's pill is the background.
 BarWidget {
@@ -308,6 +311,29 @@ BarWidget {
           z: -1
           radius: Style.cornerRadius
           color: Qt.rgba(0, 0, 0, 0.28)
+        }
+
+        // Apps style only: a thin divider at the cell's trailing edge, so
+        // adjacent workspaces don't blur together when they run the same
+        // app. Horizontal bar, vertical line; vertical bar, horizontal.
+        // No divider after the last cell.
+        Rectangle {
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          visible: root.style === "apps" && !root.vertical && index < root.workspaceIds().length - 1
+          width: 1
+          height: parent.height * 0.55
+          color: Commons.Color.foreground
+          opacity: 0.25
+        }
+        Rectangle {
+          anchors.bottom: parent.bottom
+          anchors.horizontalCenter: parent.horizontalCenter
+          visible: root.style === "apps" && root.vertical && index < root.workspaceIds().length - 1
+          width: parent.width * 0.55
+          height: 1
+          color: Commons.Color.foreground
+          opacity: 0.25
         }
 
         // Default, after Shibumi: a wide soft halo behind every cell and

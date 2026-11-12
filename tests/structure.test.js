@@ -102,6 +102,11 @@ test("style apps renders one icon per app, icons only, and nothing else from Spa
   assert.match(widget, /apps\.length \* \(root\.iconSize \+ 2\) \+ 8/)
   assert.match(widget, /Style\.space\(root\.iconSize\)/)
   assert.match(widget, /sourceSize\.width: root\.iconSize \* 2/)
+  // Apps style only: a thin divider between cells, none after the last.
+  assert.match(widget, /visible: root\.style === "apps" && !root\.vertical && index < root\.workspaceIds\(\)\.length - 1/)
+  assert.match(widget, /visible: root\.style === "apps" && root\.vertical && index < root\.workspaceIds\(\)\.length - 1/)
+  assert.match(widget, /height: parent\.height \* 0\.55/)
+  assert.match(widget, /width: parent\.width \* 0\.55/)
   // The old showApps boolean is gone: apps is a style now.
   assert.doesNotMatch(widget, /showApps/)
 })

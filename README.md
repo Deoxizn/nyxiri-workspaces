@@ -22,7 +22,8 @@ Hyprland workspace numbers for the Nyxiri bar, forked from stock Omarchy's
   keep their number, so the row stays clickable). Web apps opened from a
   link bind have no desktop file, so they use the site's favicon, fetched
   from Google's favicon service; if the fetch fails they show their first
-  letter instead. Icons are display only:
+  letter instead. A thin divider separates the cells, so two workspaces
+  running the same app don't read as one. Icons are display only:
   clicking a cell still focuses the workspace, and hovering a cell shows
   the app names. This is the small core of
   [omarchy-spaces](https://github.com/tornikegomareli/omarchy-spaces):
