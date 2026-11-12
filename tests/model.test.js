@@ -172,6 +172,12 @@ test("clampIconSize keeps 12-24, defaulting to 16", () => {
   assert.equal(Model.ICON_SIZE_MAX, 24)
 })
 
+test("appIdCandidates strips the steam_app_ prefix for the shortcut name", () => {
+  assert.deepEqual(Model.appIdCandidates("steam_app_battlenet"), ["steam_app_battlenet", "battlenet"])
+  assert.deepEqual(Model.appIdCandidates("steam_app_12345"), ["steam_app_12345", "12345"])
+  assert.deepEqual(Model.appIdCandidates("firefox"), ["firefox"])
+})
+
 test("steamAppId pulls the numeric id out of a Steam game id", () => {
   assert.equal(Model.steamAppId("steam_app_12345"), "12345")
   assert.equal(Model.steamAppId("steam_app_battlenet"), "")

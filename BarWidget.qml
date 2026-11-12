@@ -186,9 +186,11 @@ BarWidget {
       var host = Model.webAppHost(appId)
       if (host !== "") source = "https://www.google.com/s2/favicons?domain=" + host + "&sz=128"
     }
-    // No entry name: for a Steam game the title is the label, so WoW
-    // shows "W" with a "World of Warcraft" tooltip instead of "S".
-    if (name === "" && /^steam_app_/.test(appId) && title) name = String(title)
+    // For a Steam game the title is the label: the game window is
+    // "World of Warcraft" even when the entry is the Battle.net
+    // launcher, so WoW shows "W" with a "World of Warcraft" tooltip
+    // instead of "S" (or "B"). The icon still comes from the entry.
+    if (/^steam_app_/.test(appId) && title) name = String(title)
     return { source: source, name: name }
   }
 

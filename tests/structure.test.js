@@ -115,7 +115,7 @@ test("style apps renders one icon per app, icons only, and nothing else from Spa
   assert.match(widget, /Model\.steamAppId\(appId\)/)
   assert.match(widget, /librarycache\//)
   assert.match(widget, /_icon\.jpg/)
-  assert.match(widget, /if \(name === "" && \/\^steam_app_\/\.test\(appId\) && title\) name = String\(title\)/)
+  assert.match(widget, /if \(\/\^steam_app_\/\.test\(appId\) && title\) name = String\(title\)/)
   // The old showApps boolean is gone: apps is a style now.
   assert.doesNotMatch(widget, /showApps/)
 })

@@ -116,6 +116,9 @@ function appIdCandidates(appId) {
   var out = [id]
   function add(v) { if (v && out.indexOf(v) === -1) out.push(v) }
   add(id.toLowerCase())
+  // A Steam/Proton id carries the shortcut name after the prefix:
+  // steam_app_battlenet is the Battle.net desktop entry.
+  if (id.indexOf("steam_app_") === 0) add(id.slice("steam_app_".length))
   var dot = id.lastIndexOf(".")
   if (dot > 0 && dot < id.length - 1) {
     add(id.slice(dot + 1))

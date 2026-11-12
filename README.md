@@ -26,7 +26,8 @@ Hyprland workspace numbers for the Nyxiri bar, forked from stock Omarchy's
   running the same app don't read as one. Steam/Proton games identify
   as `steam_app_...` with no desktop entry, so they show the window
   title's first letter instead (WoW shows W, not S) with the game name
-  as the tooltip; a desktop entry named for the game resolves its real
+  as the tooltip; a desktop entry named for the shortcut (`battlenet.desktop`
+  for `steam_app_battlenet`) or for the game title resolves its real
   icon, and a library game with a numeric id uses the icon Steam cached
   in `librarycache`. Icons are display only:
   clicking a cell still focuses the workspace, and hovering a cell shows
