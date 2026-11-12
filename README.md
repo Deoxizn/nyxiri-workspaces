@@ -89,7 +89,11 @@ so keep them the same.
 
 Mode (Ten / Five / Active only) is just how many numbers show, not a
 per-monitor split: Five shows the first five slots, it does not mean
-five per monitor. The split is the ranges field above. The
+five per monitor. The split is the ranges field above. And Ten does not
+mean twenty workspaces: in 4.5 each monitor owns a block of ten, so Ten
+is ten per monitor, but in classic there is only one global set of ten,
+so Ten is ten total, split across monitors by the ranges. There is no
+11-20 in classic mode to put on the second monitor. The
 toggle is also available from the command line:
 
 ```sh
