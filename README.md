@@ -77,16 +77,6 @@ bash ~/.config/omarchy/plugins/devi.nyxiri-workspaces/bin/mode 4.5
 bash ~/.config/omarchy/plugins/devi.nyxiri-workspaces/bin/mode status
 ```
 
-The Hyprland side is `hypr/classic-workspaces.lua`, and the mode script is
-`bin/mode`, both copied from
-[fabiopbarbieri/omarchy-classic-workspaces](https://github.com/fabiopbarbieri/omarchy-classic-workspaces)
-(MIT) and folded in here so the suite stays one plugin instead of two.
-The Lua makes Omarchy's renumbering a no-op while classic is on, restores
-the 4.0.6 keybindings (Super + 1-0, Super + Tab across monitors, Super +
-Shift + Alt + arrows to move a workspace to another monitor), and renumbers
-workspaces 11+ into 1-10 when switching to classic. Saved layouts (Super +
-L) follow their workspace across the switch.
-
 The plugin id is `devi.nyxiri-workspaces`. The widget paints no background
 of its own; the bar's pill is the background, so pill transparency applies
 to it like everything else.
