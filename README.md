@@ -161,6 +161,10 @@ Right-click the bar to open the Nyxiri settings card, **Workspaces** tab
 - **Mode** — Ten / Five / Active only.
 - **Style** — Numbers / Kanji / Pac-Man / Dots / Magic / Default / Aurora / Apps.
 - **Hide empty workspaces** — on or off.
+- **Cycle layout on click** — on or off. On, clicking the workspace you're
+  already on switches tiling, scrolling, floating (as Super + L does). Off,
+  a click on the focused workspace does nothing, so a double-click to focus
+  a workspace can't change the layout.
 - **App icon size** — 12–24px, default 16. Only shows in the card while
   the Apps style is picked; it does nothing in the other styles. The
   `bar set` example above needs `--json`, or the value lands as a string
