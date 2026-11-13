@@ -175,16 +175,43 @@ BarWidget {
   // on, so the model stays testable without Hyprland. The apps list rides
   // the same binding as the window count, so icons update when toplevels
   // open and close without any extra refresh.
+  //
+  // Window counts come from the global toplevel list, not from each
+  // workspace's own toplevels: in classic mode that per-workspace list
+  // reads empty for background workspaces, so hideEmpty swallowed
+  // occupied ones. A workspace the list never reports but that owns
+  // toplevels gets a synthetic entry, so it counts as occupied too.
   readonly property var workspaceValues: {
+    var byWorkspace = {}
+    var all = Hyprland.toplevels.values
+    for (var t = 0; t < all.length; t++) {
+      var top = all[t]
+      if (!top || !top.workspace || !top.workspace.id) continue
+      var wid = top.workspace.id
+      if (!byWorkspace[wid]) byWorkspace[wid] = []
+      byWorkspace[wid].push(top)
+    }
     var out = []
+    var seen = {}
     var values = Hyprland.workspaces.values
     for (var i = 0; i < values.length; i++) {
       var ws = values[i]
+      var apps = byWorkspace[ws.id] || []
+      seen[ws.id] = true
       out.push({
         id: ws.id,
-        windowCount: ws.toplevels ? ws.toplevels.values.length : 0,
+        windowCount: apps.length,
         monitorName: ws.monitor ? ws.monitor.name : "",
-        apps: root.appsOf(ws)
+        apps: root.appsOfList(apps)
+      })
+    }
+    for (var id in byWorkspace) {
+      if (seen[id]) continue
+      out.push({
+        id: Number(id),
+        windowCount: byWorkspace[id].length,
+        monitorName: "",
+        apps: root.appsOfList(byWorkspace[id])
       })
     }
     return out
@@ -198,13 +225,12 @@ BarWidget {
     return ipc && ipc["class"] ? ipc["class"] : ""
   }
 
-  function appsOf(workspace) {
-    var list = []
-    var toplevels = workspace && workspace.toplevels ? workspace.toplevels.values : []
-    for (var i = 0; i < toplevels.length; i++) {
-      list.push({ appId: root.appIdOf(toplevels[i]), title: String(toplevels[i].title || "") })
+  function appsOfList(list) {
+    var out = []
+    for (var i = 0; i < list.length; i++) {
+      out.push({ appId: root.appIdOf(list[i]), title: String(list[i].title || "") })
     }
-    return list
+    return out
   }
 
   // Icon lookup, the small core of omarchy-spaces' appInfo: desktop entry
