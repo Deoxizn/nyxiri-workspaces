@@ -11,7 +11,7 @@ function read(name) {
 
 test("the manifest declares the Nyxiri workspaces bar widget", () => {
   const manifest = JSON.parse(read("manifest.json"))
-  assert.equal(manifest.id, "devi.nyxiri-workspaces")
+  assert.equal(manifest.id, "pizza.dirty.nyxiri-workspaces")
   assert.deepEqual(manifest.kinds, ["bar-widget"])
   assert.equal(manifest.entryPoints.barWidget, "BarWidget.qml")
   assert.equal(manifest.barWidget.defaultSection, "left")
@@ -20,7 +20,7 @@ test("the manifest declares the Nyxiri workspaces bar widget", () => {
 
 test("the widget reads mode, hideEmpty, and style from its layout entry", () => {
   const widget = read("BarWidget.qml")
-  assert.match(widget, /moduleName: "devi\.nyxiri-workspaces"/)
+  assert.match(widget, /moduleName: "pizza\.dirty\.nyxiri-workspaces"/)
   assert.match(widget, /setting\("mode", "10"\)/)
   assert.match(widget, /setting\("hideEmpty", false\)/)
   // `bar set` stores booleans as strings without --json, so hideEmpty
@@ -153,7 +153,7 @@ test("the widget keeps stock focus, scroll, and layout-cycle behavior", () => {
 test("install.sh defaults to omarchy plugin add", () => {
   const install = read("scripts/install.sh")
   assert.match(install, /omarchy plugin add "\$workspaces_repo" --enable/)
-  assert.match(install, /devi\.nyxiri-workspaces/)
+  assert.match(install, /pizza\.dirty\.nyxiri-workspaces/)
   // The usage heredoc must be quoted, or backticks inside it would execute.
   assert.match(install, /cat <<'USAGE'/)
 })
@@ -227,14 +227,14 @@ test("bin/mode flips which workspaces file is live on switch", () => {
 
 test("the setup script wires the loaders, flips the live file, and owns no workspaces file", () => {
   const setup = read("scripts/setup-classic.sh")
-  assert.match(setup, /-- BEGIN devi\.nyxiri-workspaces/)
+  assert.match(setup, /-- BEGIN pizza\.dirty\.nyxiri-workspaces/)
   assert.match(setup, /hypr\/classic-workspaces\.lua/)
   assert.match(setup, /.config\/hypr\/workspaces\.lua/)
   assert.match(setup, /.config\/hypr\/workspaces-classic\.lua/)
   assert.match(setup, /grep -Fq -- "\$marker" "\$conf"/)
   assert.match(setup, /\.bak\.\$\(date \+%s\)/)
   // An old block (classic Lua only) is stripped and re-appended.
-  assert.match(setup, /sed -i '\/-- BEGIN devi\.nyxiri-workspaces\/,\/-- END devi\.nyxiri-workspaces\/d' "\$conf"/)
+  assert.match(setup, /sed -i '\/-- BEGIN pizza\.dirty\.nyxiri-workspaces\/,\/-- END pizza\.dirty\.nyxiri-workspaces\/d' "\$conf"/)
   assert.match(setup, /hyprctl reload/)
   assert.match(setup, /hyprctl configerrors/)
   // The live file follows the current mode; the other is .bak.
@@ -264,4 +264,9 @@ test("the widget reads the applied mode and the flag, and ranges from its layout
   assert.match(widget, /workspaceScope\.reload\(\)/)
   // Classic focus is a plain Hyprland focus by id, not the block-aware one.
   assert.match(widget, /if \(!root\.perMonitorWorkspaces\) \{\s*root\.dispatch\("hl\.dsp\.focus/)
+})
+
+test("the manifest id is pizza.dirty.nyxiri-workspaces", () => {
+  const manifest = JSON.parse(read("manifest.json"))
+  assert.equal(manifest.id, "pizza.dirty.nyxiri-workspaces")
 })

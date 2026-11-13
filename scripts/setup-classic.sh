@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-time setup for Classic workspaces. Wires the loaders into
 # hyprland.lua and sets which workspaces file is live:
-#   bash ~/.config/omarchy/plugins/devi.nyxiri-workspaces/scripts/setup-classic.sh
+#   bash ~/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/scripts/setup-classic.sh
 # What it does, all idempotent, then reloads Hyprland:
 #   1. Appends one dofile block to hyprland.lua (backing it up first)
 #      that loads the plugin's hypr/classic-workspaces.lua and your two
@@ -25,7 +25,7 @@ set -euo pipefail
 
 hypr_dir="$HOME/.config/hypr"
 conf="$hypr_dir/hyprland.lua"
-marker="-- BEGIN devi.nyxiri-workspaces"
+marker="-- BEGIN pizza.dirty.nyxiri-workspaces"
 flag="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/toggles/no-monitor-workspaces"
 plugin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -45,15 +45,15 @@ if grep -Fq -- "$marker" "$conf" 2>/dev/null; then
     echo "Classic workspaces block already in $conf; nothing to do."
   else
     cp "$conf" "$conf.bak.$(date +%s)"
-    sed -i '/-- BEGIN devi.nyxiri-workspaces/,/-- END devi.nyxiri-workspaces/d' "$conf"
+    sed -i '/-- BEGIN pizza.dirty.nyxiri-workspaces/,/-- END pizza.dirty.nyxiri-workspaces/d' "$conf"
     echo "Removed the old loader block from $conf (backup made)."
   fi
 fi
 if ! grep -Fq -- "$marker" "$conf" 2>/dev/null; then
   cat >> "$conf" <<'LUA'
--- BEGIN devi.nyxiri-workspaces
+-- BEGIN pizza.dirty.nyxiri-workspaces
 do
-  local path = os.getenv("HOME") .. "/.config/omarchy/plugins/devi.nyxiri-workspaces/hypr/classic-workspaces.lua"
+  local path = os.getenv("HOME") .. "/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/hypr/classic-workspaces.lua"
   local file = io.open(path, "r")
   if file then file:close(); dofile(path) end
 end
@@ -67,7 +67,7 @@ do
   local file = io.open(path, "r")
   if file then file:close(); dofile(path) end
 end
--- END devi.nyxiri-workspaces
+-- END pizza.dirty.nyxiri-workspaces
 LUA
   echo "Added Classic workspaces block to $conf."
 fi

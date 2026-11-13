@@ -14,7 +14,7 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-target=${NYXIRI_WORKSPACES_PLUGIN_DIR:-$HOME/.config/omarchy/plugins/devi.nyxiri-workspaces}
+target=${NYXIRI_WORKSPACES_PLUGIN_DIR:-$HOME/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces}
 mode=add
 workspaces_repo=${NYXIRI_WORKSPACES_REPO:-https://github.com/Deoxizn/nyxiri-workspaces.git}
 yes_flags=()
@@ -29,7 +29,7 @@ Usage: scripts/install.sh [--add|--clone|--link|--copy] [--yes] [--target DIR]
            `omarchy plugin update` will fail validation on a symlink)
   --copy   copy the plugin files instead (no .git, so no plugin updates)
   --yes    pass --yes through to omarchy plugin add/remove (non-interactive)
-  --target DIR  install elsewhere (default ~/.config/omarchy/plugins/devi.nyxiri-workspaces)
+  --target DIR  install elsewhere (default ~/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces)
 USAGE
 }
 
@@ -55,7 +55,7 @@ mkdir -p -- "$(dirname -- "$target")"
 
 remove_if_installed() {
   if [[ -e $target || -L $target ]]; then
-    omarchy plugin remove devi.nyxiri-workspaces "${yes_flags[@]}"
+    omarchy plugin remove pizza.dirty.nyxiri-workspaces "${yes_flags[@]}"
   fi
 }
 
@@ -88,6 +88,6 @@ fi
 
 printf '\nNext:\n'
 printf '  omarchy-shell shell rescanPlugins\n'
-printf '  omarchy plugin enable devi.nyxiri-workspaces\n'
-printf '  omarchy bar put devi.nyxiri-workspaces\n'
+printf '  omarchy plugin enable pizza.dirty.nyxiri-workspaces\n'
+printf '  omarchy bar put pizza.dirty.nyxiri-workspaces\n'
 printf '\nEnable moves the widget in. Put it where the old workspaces widget was,\nthen remove that one from the bar.\n'

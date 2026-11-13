@@ -97,12 +97,12 @@ so Ten is ten total, split across monitors by the ranges. There is no
 toggle is also available from the command line:
 
 ```sh
-bash ~/.config/omarchy/plugins/devi.nyxiri-workspaces/bin/mode classic
-bash ~/.config/omarchy/plugins/devi.nyxiri-workspaces/bin/mode 4.5
-bash ~/.config/omarchy/plugins/devi.nyxiri-workspaces/bin/mode status
+bash ~/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/bin/mode classic
+bash ~/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/bin/mode 4.5
+bash ~/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/bin/mode status
 ```
 
-The plugin id is `devi.nyxiri-workspaces`. The widget paints no background
+The plugin id is `pizza.dirty.nyxiri-workspaces`. The widget paints no background
 of its own; the bar's pill is the background, so pill transparency applies
 to it like everything else.
 
@@ -111,7 +111,7 @@ to it like everything else.
 ```sh
 omarchy plugin add https://github.com/Deoxizn/nyxiri-workspaces.git --enable
 omarchy-shell shell rescanPlugins
-omarchy bar put devi.nyxiri-workspaces
+omarchy bar put pizza.dirty.nyxiri-workspaces
 ```
 
 `omarchy plugin add` is the install: it clones a real checkout (so
@@ -136,7 +136,7 @@ installs `hypr/workspaces.lua` and `hypr/workspaces-classic.lua` into
 block is already there, and reloads Hyprland:
 
 ```sh
-bash ~/.config/omarchy/plugins/devi.nyxiri-workspaces/scripts/setup-classic.sh
+bash ~/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/scripts/setup-classic.sh
 ```
 
 After that, the Classic toggle in the settings card switches modes on its
@@ -146,11 +146,11 @@ for the applied file the Lua writes, then gives up and puts the flag
 back).
 
 ```sh
-omarchy bar set devi.nyxiri-workspaces style kanji
-omarchy bar set devi.nyxiri-workspaces mode 5
-omarchy bar set devi.nyxiri-workspaces hideEmpty true
-omarchy bar set devi.nyxiri-workspaces style apps
-omarchy bar set devi.nyxiri-workspaces iconSize 20 --json
+omarchy bar set pizza.dirty.nyxiri-workspaces style kanji
+omarchy bar set pizza.dirty.nyxiri-workspaces mode 5
+omarchy bar set pizza.dirty.nyxiri-workspaces hideEmpty true
+omarchy bar set pizza.dirty.nyxiri-workspaces style apps
+omarchy bar set pizza.dirty.nyxiri-workspaces iconSize 20 --json
 ```
 
 ## Settings

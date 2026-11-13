@@ -37,7 +37,7 @@ import "WorkspaceModel.js" as Model
 // paints no background of its own; the bar's pill is the background.
 BarWidget {
   id: root
-  moduleName: "devi.nyxiri-workspaces"
+  moduleName: "pizza.dirty.nyxiri-workspaces"
 
   readonly property string mode: String(setting("mode", "10"))
   // `omarchy bar set` stores values as strings unless --json is passed, so
