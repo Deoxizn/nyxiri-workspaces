@@ -268,6 +268,17 @@ BarWidget {
     var name = entry && entry.name ? String(entry.name) : ""
     var icon = entry && entry.icon ? String(entry.icon) : String(appId || "")
     var source = ""
+    // Omarchy's themed icons: the current icon set rendered in the theme's
+    // colors lives in ~/.local/state/omarchy/current/icons/<name>.svg
+    // (named after the desktop entry's Icon=). Use it when it exists and
+    // fall back to the theme icon when it doesn't; the delegate tries the
+    // themed source first and switches to source on an image error, so a
+    // missing themed file never shows a letter for an app the theme has.
+    var themed = ""
+    if (icon !== "" && icon.indexOf("file://") !== 0 && icon.indexOf("image://") !== 0 && icon.charAt(0) !== "/") {
+      var home = Quickshell.env("HOME") || ""
+      if (home !== "") themed = "file://" + home + "/.local/state/omarchy/current/icons/" + icon + ".svg"
+    }
     if (icon !== "") {
       if (icon.indexOf("file://") === 0 || icon.indexOf("image://") === 0) source = icon
       else if (icon.charAt(0) === "/") source = Util.fileUrl(icon)
@@ -292,7 +303,7 @@ BarWidget {
     // launcher, so WoW shows "W" with a "World of Warcraft" tooltip
     // instead of "S" (or "B"). The icon still comes from the entry.
     if (/^steam_app_/.test(appId) && title) name = String(title)
-    return { source: source, name: name }
+    return { source: source, themed: themed, name: name }
   }
 
   function workspaceIds() {
@@ -531,6 +542,13 @@ BarWidget {
               required property var modelData
 
               readonly property var info: root.appInfo(modelData.appId, modelData.title)
+              // The themed source is tried first; a missing themed file
+              // errors the image, which flips this and falls back to the
+              // theme icon. Reset when the app changes so a new app tries
+              // its themed icon again.
+              property bool themedOk: true
+              onInfoChanged: themedOk = true
+              readonly property string effectiveSource: (info.themed !== "" && themedOk) ? info.themed : info.source
 
               width: Style.space(root.iconSize)
               height: Style.space(root.iconSize)
@@ -538,8 +556,9 @@ BarWidget {
               Image {
                 id: iconImage
                 anchors.fill: parent
-                visible: info.source !== "" && status !== Image.Error
-                source: info.source
+                visible: effectiveSource !== "" && status !== Image.Error
+                source: effectiveSource
+                onStatusChanged: if (status === Image.Error && effectiveSource === info.themed) themedOk = false
                 sourceSize.width: root.iconSize * 2
                 sourceSize.height: root.iconSize * 2
                 fillMode: Image.PreserveAspectFit
@@ -549,7 +568,7 @@ BarWidget {
 
               Text {
                 anchors.centerIn: parent
-                visible: info.source === "" || iconImage.status === Image.Error
+                visible: effectiveSource === "" || iconImage.status === Image.Error
                 text: Model.fallbackLetter(info.name, modelData.appId)
                 color: Commons.Color.foreground
                 font.pixelSize: Style.space(Math.round(root.iconSize * 0.7))
