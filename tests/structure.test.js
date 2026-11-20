@@ -270,3 +270,71 @@ test("the manifest id is pizza.dirty.nyxiri-workspaces", () => {
   const manifest = JSON.parse(read("manifest.json"))
   assert.equal(manifest.id, "pizza.dirty.nyxiri-workspaces")
 })
+
+test("the standalone settings window has the Workspaces controls", () => {
+  const popup = read("WorkspacesSettings.qml")
+  // A floating layer-shell window, like the bar's settings window.
+  assert.match(popup, /^PanelWindow \{/m)
+  assert.match(popup, /WlrLayershell\.namespace: "pizza\.dirty\.nyxiri-workspaces-settings"/)
+  assert.match(popup, /WlrLayershell\.layer: WlrLayer\.Overlay/)
+  assert.match(popup, /mask: Region \{ item: windowBody \}/)
+  assert.match(popup, /property var hostWidget: null/)
+  // The same controls as the bar's settings window Workspaces tab.
+  assert.match(popup, /SectionLabel \{ text: "WORKSPACES" \}/)
+  assert.match(popup, /\{ value: "10", label: "Ten" \}/)
+  assert.match(popup, /\{ value: "5", label: "Five" \}/)
+  assert.match(popup, /\{ value: "active", label: "Active only" \}/)
+  assert.match(popup, /\{ value: "numbers", label: "Numbers" \}/)
+  assert.match(popup, /\{ value: "apps", label: "Apps" \}/)
+  assert.match(popup, /label: "Hide empty workspaces"/)
+  assert.match(popup, /label: "Cycle layout on click"/)
+  assert.match(popup, /label: "Classic workspaces"/)
+  assert.match(popup, /placeholderText: "DP-1:1-5,HDMI-A-1:6-10"/)
+  assert.match(popup, /label: "App icon size"/)
+  // Reads and writes go through the host widget, not a copy of the state.
+  assert.match(popup, /function wsSetting\(name, fallback\) \{\s*return hostWidget \? hostWidget\.setting\(name, fallback\) : fallback/)
+  assert.match(popup, /function setWorkspaces\(patch\) \{\s*if \(hostWidget\) hostWidget\.setWorkspaces\(patch\)/)
+  // Classic mode is Hyprland state, asked of bin/mode like the bar's window.
+  assert.match(popup, /classicModeScript/)
+  assert.match(popup, /bin\/mode/)
+  assert.match(popup, /refreshClassicMode\(\)/)
+  assert.match(popup, /switchClassic\(/)
+  // Escape closes it.
+  assert.match(popup, /sequence: "Escape"/)
+  assert.match(popup, /onActivated: popup\.closeSettings\(\)/)
+})
+
+test("right-click on a workspace cell opens settings, left-click still focuses and cycles", () => {
+  const widget = read("BarWidget.qml")
+  // Right-click opens the standalone settings window and does nothing else.
+  assert.match(widget, /onPressed: function\(b\) \{/)
+  assert.match(widget, /if \(b === Qt\.RightButton\) \{ root\.toggleSettings\(\); return \}/)
+  // Left-click behavior is unchanged: focused cell cycles (when enabled),
+  // other cells focus.
+  assert.match(widget, /if \(shown && root\.cycleLayoutOnClick\) root\.cycleLayout\(\)/)
+  assert.match(widget, /else if \(!shown\) root\.focusWorkspace\(modelData\)/)
+  // The popup is declared on the widget, bound to its own open state and
+  // to the screen the widget sits on.
+  assert.match(widget, /property bool settingsOpen: false/)
+  assert.match(widget, /function toggleSettings\(\) \{\s*root\.settingsOpen = !root\.settingsOpen/)
+  assert.match(widget, /WorkspacesSettings \{/)
+  assert.match(widget, /hostWidget: root/)
+  assert.match(widget, /visible: root\.settingsOpen/)
+  assert.match(widget, /root\.QsWindow\.window/)
+})
+
+test("the widget writes settings through updateEntryInline, the same mechanism as the bar's window", () => {
+  const widget = read("BarWidget.qml")
+  assert.match(widget, /function setWorkspaces\(patch\) \{/)
+  // updateEntryInline replaces rather than merges, so the existing entry
+  // is copied first and the patch applied on top, exactly like the bar's
+  // writeWorkspacesSettings.
+  assert.match(widget, /var entry = \{ id: root\.moduleName \}/)
+  assert.match(widget, /var current = root\.settings \|\| \{\}/)
+  assert.match(widget, /for \(var key in current\) if \(key !== "id"\) entry\[key\] = current\[key\]/)
+  assert.match(widget, /for \(var patchName in patch\) entry\[patchName\] = patch\[patchName\]/)
+  assert.match(widget, /root\.settings = entry/)
+  assert.match(widget, /root\.bar\.shell\.updateEntryInline\(root\.moduleName, entry\)/)
+  // Guarded the way the clock guards it: no bar or no shell, no write.
+  assert.match(widget, /typeof root\.bar\.shell\.updateEntryInline !== "function"/)
+})

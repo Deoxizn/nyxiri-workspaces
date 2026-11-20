@@ -58,6 +58,32 @@ BarWidget {
   // click-cycles-layout behaviour; turn it off in the settings card.
   readonly property bool cycleLayoutOnClick: setting("cycleLayoutOnClick", true) === true || setting("cycleLayoutOnClick", true) === "true"
 
+  // Standalone settings: right-click any workspace cell opens the
+  // WorkspacesSettings window. It is the same controls as the bar's
+  // settings window Workspaces tab, so the plugin is usable on its own
+  // (stock bar, no Nyxiri bar), where there is no bar settings window.
+  property bool settingsOpen: false
+
+  function toggleSettings() {
+    root.settingsOpen = !root.settingsOpen
+  }
+
+  // Write the workspaces settings the same way the bar's settings window
+  // does: updateEntryInline replaces rather than merges, so the existing
+  // settings are copied first and the patch applied on top. The shell.json
+  // write comes back through the bar as the same values, so the bar's
+  // window and the standalone popup stay in sync: both write to the same
+  // layout entry.
+  function setWorkspaces(patch) {
+    if (!root.bar || !root.bar.shell || typeof root.bar.shell.updateEntryInline !== "function") return false
+    var entry = { id: root.moduleName }
+    var current = root.settings || {}
+    for (var key in current) if (key !== "id") entry[key] = current[key]
+    for (var patchName in patch) entry[patchName] = patch[patchName]
+    root.settings = entry
+    return root.bar.shell.updateEntryInline(root.moduleName, entry)
+  }
+
   // Classic vs 4.5 workspaces, after omarchy-classic-workspaces: the mode
   // the last config load applied, from hypr/classic-workspaces.lua, and the
   // flag, which only counts until a mode has been recorded: Hyprland may
@@ -580,12 +606,27 @@ BarWidget {
         verticalPadding: 6
         fixedWidth: root.vertical ? root.barSize : Style.space(showAppIcons ? appCellSpan : (root.shapeStyle ? 36 : 20))
         fixedHeight: root.vertical ? (showAppIcons ? Style.space(appCellSpan) : root.barSize) : root.barSize
-        onPressed: function() {
+        onPressed: function(b) {
+          // Right-click opens the standalone settings window; it does not
+          // focus or cycle, so a right-click never changes the workspace.
+          if (b === Qt.RightButton) { root.toggleSettings(); return }
           if (shown && root.cycleLayoutOnClick) root.cycleLayout()
           else if (!shown) root.focusWorkspace(modelData)
         }
         onWheelMoved: function(delta) { root.scrollWorkspaces(delta) }
       }
+    }
+  }
+
+  // The standalone settings window, one per bar surface. It opens on
+  // right-click and closes from its own Close button or Escape.
+  WorkspacesSettings {
+    bar: root.bar
+    hostWidget: root
+    visible: root.settingsOpen
+    screen: {
+      var window = root.QsWindow.window
+      return window ? window.screen : null
     }
   }
 }
