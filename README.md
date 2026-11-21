@@ -49,8 +49,8 @@ layout glyph.
 ## Classic workspaces
 
 One global set of workspaces 1-10, as in Omarchy 4.0.6, instead of 4.5's
-per-monitor blocks. The toggle lives in the settings card's **Workspaces**
-tab (**Classic workspaces**); it runs `bin/mode`, which flips the flag
+per-monitor blocks. The toggle lives in the Nyxiri settings window's **Workspaces**
+tab or the widget's own settings popup (**Classic workspaces**); it runs `bin/mode`, which flips the flag
 (`~/.local/state/omarchy/toggles/no-monitor-workspaces`) and reloads
 Hyprland. The widget reads what Hyprland actually applied, from the
 applied file the Lua writes, so the bar follows the real mode even if a
@@ -123,8 +123,7 @@ update` validation: Omarchy's validator refuses symlinks inside a
 plugin folder.
 
 Put it where the old workspaces widget was, then remove that one from the
-bar. Requires the [Nyxiri bar](https://github.com/Deoxizn/nyxiri) for the
-settings card; without it the widget still works with the defaults (Ten,
+bar. The settings live in the [Nyxiri bar](https://github.com/Deoxizn/nyxiri) settings window (Workspaces tab) and in the widget's own settings popup, which works without the Nyxiri bar too. Without either, the widget still works with the defaults (Ten,
 numbers, empty workspaces shown) and the settings are editable in
 `shell.json`, on the widget's own layout entry.
 
@@ -139,8 +138,8 @@ block is already there, and reloads Hyprland:
 bash ~/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/scripts/setup-classic.sh
 ```
 
-After that, the Classic toggle in the settings card switches modes on its
-own; nothing else needs editing. Without that step the widget still works
+After that, the Classic toggle in the settings window or the standalone popup switches modes on its
+own; nothing else needs editing. If classic breaks after an Omarchy update, re-run `setup-classic.sh` above, then switch back to classic with `bin/mode classic`. Without that step the widget still works
 in 4.5 mode, and the Classic toggle does nothing (the mode script waits
 for the applied file the Lua writes, then gives up and puts the flag
 back).
@@ -155,8 +154,7 @@ omarchy bar set pizza.dirty.nyxiri-workspaces iconSize 20 --json
 
 ## Settings
 
-Right-click the bar to open the Nyxiri settings card, **Workspaces** tab
-(it only offers controls while this widget is on the bar):
+Right-click any workspace cell to open the widget's settings popup (560x600, Escape closes it), or open the Nyxiri settings window from the bat icon on the bar and pick the **Workspaces** tab. Both offer the same controls and write the same settings, so they stay in sync:
 
 - **Mode** — Ten / Five / Active only.
 - **Style** — Numbers / Kanji / Pac-Man / Dots / Magic / Default / Aurora / Apps.
@@ -165,10 +163,10 @@ Right-click the bar to open the Nyxiri settings card, **Workspaces** tab
   already on switches tiling, scrolling, floating (as Super + L does). Off,
   a click on the focused workspace does nothing, so a double-click to focus
   a workspace can't change the layout.
-- **App icon size** — 12–24px, default 16. Only shows in the card while
+- **App icon size** — 12–24px, default 16. Only shows while
   the Apps style is picked; it does nothing in the other styles. The
   `bar set` example above needs `--json`, or the value lands as a string
-  (the widget accepts both, the card slider writes a number).
+  (the widget accepts both, the popup slider writes a number).
 - **Classic workspaces** — on or off. One global set 1-10 instead of 4.5's
   per-monitor blocks; the switch reloads Hyprland and takes a second or
   two. Needs the Lua loaded (see Install), or the toggle does nothing.
