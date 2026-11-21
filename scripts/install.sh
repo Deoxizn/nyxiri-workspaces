@@ -46,12 +46,17 @@ while (( $# > 0 )); do
   esac
 done
 
-mkdir -p -- "$(dirname -- "$target")"
+plugins_dir=$HOME/.config/omarchy/plugins
+target_abs=$(realpath -m -- "$target" 2>/dev/null || printf '%s' "$target")
+case $target_abs in
+  "$plugins_dir"/*) ;;
+  *)
+    printf 'install: refusing to replace %s (must be under %s)\n' "$target" "$plugins_dir" >&2
+    exit 1
+    ;;
+esac
 
-[[ -n $target && $target != "/" && $target != "$HOME" ]] || {
-  printf 'install: refusing to replace %s\n' "$target" >&2
-  exit 1
-}
+mkdir -p -- "$(dirname -- "$target")"
 
 remove_if_installed() {
   if [[ -e $target || -L $target ]]; then
@@ -73,7 +78,7 @@ elif [[ $mode == clone ]]; then
     exit 1
   }
   rm -rf -- "$target"
-  git clone -- "$url" "$target"
+  GIT_ALLOW_PROTOCOL=https:ssh git -c core.fsmonitor=false clone -- "$url" "$target"
   printf 'cloned %s -> %s\n' "$url" "$target"
 elif [[ $mode == link ]]; then
   rm -rf -- "$target"
