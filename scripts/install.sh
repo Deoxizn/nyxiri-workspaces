@@ -14,7 +14,7 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-target=${NYXIRI_WORKSPACES_PLUGIN_DIR:-$HOME/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces}
+target=${NYXIRI_WORKSPACES_PLUGIN_DIR:-$HOME/.config/hexciri/plugins/pizza.dirty.nyxiri-workspaces}
 mode=add
 workspaces_repo=${NYXIRI_WORKSPACES_REPO:-https://github.com/Deoxizn/nyxiri-workspaces.git}
 yes_flags=()
@@ -29,7 +29,7 @@ Usage: scripts/install.sh [--add|--clone|--link|--copy] [--yes] [--target DIR]
            `omarchy plugin update` will fail validation on a symlink)
   --copy   copy the plugin files instead (no .git, so no plugin updates)
   --yes    pass --yes through to omarchy plugin add/remove (non-interactive)
-  --target DIR  install elsewhere (default ~/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces)
+  --target DIR  install elsewhere (default ~/.config/hexciri/plugins/pizza.dirty.nyxiri-workspaces)
 USAGE
 }
 
@@ -46,7 +46,7 @@ while (( $# > 0 )); do
   esac
 done
 
-plugins_dir=$HOME/.config/omarchy/plugins
+plugins_dir=$HOME/.config/hexciri/plugins
 target_abs=$(realpath -m -- "$target" 2>/dev/null || printf '%s' "$target")
 case $target_abs in
   "$plugins_dir"/*) ;;
@@ -92,7 +92,7 @@ else
 fi
 
 printf '\nNext:\n'
-printf '  omarchy-shell shell rescanPlugins\n'
+printf '  hexciri-shell shell rescanPlugins\n'
 printf '  omarchy plugin enable pizza.dirty.nyxiri-workspaces\n'
 printf '  omarchy bar put pizza.dirty.nyxiri-workspaces\n'
 printf '\nEnable moves the widget in. Put it where the old workspaces widget was,\nthen remove that one from the bar.\n'

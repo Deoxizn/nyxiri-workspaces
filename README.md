@@ -6,7 +6,7 @@ Workspace numbers for the Nyxiri bar. Click a number to jump to that workspace. 
 
 ```sh
 omarchy plugin add https://github.com/Deoxizn/nyxiri-workspaces.git --enable
-omarchy-shell shell rescanPlugins
+hexciri-shell shell rescanPlugins
 omarchy bar put pizza.dirty.nyxiri-workspaces
 ```
 
@@ -39,15 +39,15 @@ One shared set of workspaces 1–10 for all monitors, like Omarchy 4.0.6. Off by
 One-time setup (only if you want Classic):
 
 ```sh
-bash ~/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/scripts/setup-classic.sh
+bash ~/.config/hexciri/plugins/pizza.dirty.nyxiri-workspaces/scripts/setup-classic.sh
 ```
 
 Then flip the **Classic workspaces** switch in settings. Or from the command line:
 
 ```sh
-bash ~/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/bin/mode classic
-bash ~/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/bin/mode 4.5
-bash ~/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/bin/mode status
+bash ~/.config/hexciri/plugins/pizza.dirty.nyxiri-workspaces/bin/mode classic
+bash ~/.config/hexciri/plugins/pizza.dirty.nyxiri-workspaces/bin/mode 4.5
+bash ~/.config/hexciri/plugins/pizza.dirty.nyxiri-workspaces/bin/mode status
 ```
 
 While Classic is on, **Workspaces per monitor** picks which workspaces each monitor shows, for example `DP-1:1-5,HDMI-A-1:6-10`. `0` means 10.

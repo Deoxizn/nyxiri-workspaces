@@ -65,7 +65,7 @@ PanelWindow {
   // The mode is Hyprland state, not a widget setting, so this asks the
   // script instead of reading the layout entry. The script runs through
   // bash: pushes land mode 644, so it never runs directly.
-  readonly property string classicModeScript: (Quickshell.env("HOME") || "") + "/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/bin/mode"
+  readonly property string classicModeScript: (Quickshell.env("HOME") || "") + "/.config/hexciri/plugins/pizza.dirty.nyxiri-workspaces/bin/mode"
   property bool classicMode: false
   property bool classicModeKnown: false
   property bool classicSwitching: false

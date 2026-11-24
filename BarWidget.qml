@@ -105,7 +105,7 @@ BarWidget {
 
   FileView {
     id: appliedScope
-    path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/omarchy/classic-workspaces/applied"
+    path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/hexciri/classic-workspaces/applied"
     watchChanges: true
     printErrors: false
     onFileChanged: reload()
@@ -115,7 +115,7 @@ BarWidget {
 
   FileView {
     id: workspaceScope
-    path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/omarchy/toggles/no-monitor-workspaces"
+    path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/hexciri/toggles/no-monitor-workspaces"
     watchChanges: true
     printErrors: false
     onFileChanged: reload()
@@ -166,7 +166,7 @@ BarWidget {
   }
 
   FileView {
-    path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/omarchy/monitors/workspaces"
+    path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/hexciri/monitors/workspaces"
     watchChanges: true
     printErrors: false
     onFileChanged: reload()
@@ -379,6 +379,9 @@ BarWidget {
   // monitor's bar focuses that monitor first.
   function cycleLayout() {
     if (!root.bar) return
+    // Hexciri: no hexciri-hyprland-workspace-layout-toggle ships in the
+    // forked shell (not in fork-shell.sh is_allowed_bin), so this stays
+    // omarchy-* and is a no-op on Hexciri until Hexciri ships it.
     var command = "omarchy-hyprland-workspace-layout-toggle"
     if (root.monitor && !root.monitor.focused) {
       command = "hyprctl dispatch " + Util.shellQuote("hl.dsp.focus({ monitor = \"" + root.monitorName + "\" })") + " >/dev/null && " + command

@@ -33,7 +33,7 @@ local paths = require("default.hypr.paths")
 -- Omarchy switch that reads the flag elsewhere, leaves Hyprland in the other
 -- mode. Written last, so a load that errors before the end doesn't claim it.
 local function record(mode)
-  local dir = paths.state_home .. "/omarchy/classic-workspaces"
+  local dir = paths.state_home .. "/hexciri/classic-workspaces"
   local file = io.open(dir .. "/applied", "w")
   if not file then
     os.execute("mkdir -p '" .. dir .. "'")
@@ -50,7 +50,7 @@ end
 -- workspace that no longer exists, is set aside where Omarchy doesn't load it.
 -- compact uses it going to Classic, and bin/mode going to 4.5, after Omarchy
 -- renumbered; the reload bin/mode runs when the files change applies them.
-local layouts = paths.state_home .. "/omarchy/workspace-layouts"
+local layouts = paths.state_home .. "/hexciri/workspace-layouts"
 
 local function read_file(path)
   local file = io.open(path, "r")
@@ -123,7 +123,7 @@ end
 
 -- Toggleable: only with the flag (the same one #16213 reads) is anything
 -- reverted. Without it, Omarchy's per-monitor workspaces run untouched.
-local flag = io.open(paths.state_home .. "/omarchy/toggles/no-monitor-workspaces", "r")
+local flag = io.open(paths.state_home .. "/hexciri/toggles/no-monitor-workspaces", "r")
 M.enabled = flag == nil
 if flag then
   flag:close()
@@ -134,8 +134,8 @@ end
 
 -- Unplug origins would point at workspaces that reuse the same global ids.
 -- Omarchy 4.5 keeps them in omarchy/; later releases in omarchy/monitors/.
-os.remove(paths.state_home .. "/omarchy/monitor-workspaces-merged")
-os.remove(paths.state_home .. "/omarchy/monitors/workspaces-merged")
+os.remove(paths.state_home .. "/hexciri/monitor-workspaces-merged")
+os.remove(paths.state_home .. "/hexciri/monitors/workspaces-merged")
 
 -- Workspace pinning (which workspaces live on which monitor, and which
 -- apps open on which workspace) lives in ~/.config/hypr/workspaces.lua

@@ -5,7 +5,7 @@
 # to es), then English, then the key. %1, %2... are replaced by ARGS.
 i18n="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/i18n"
 language=en
-language_file=${OMARCHY_LANGUAGE_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/language}
+language_file=${OMARCHY_LANGUAGE_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/hexciri/language}
 if [[ -f $language_file ]]; then
   read -r language <"$language_file" || true
   language=${language//[[:space:]]/}

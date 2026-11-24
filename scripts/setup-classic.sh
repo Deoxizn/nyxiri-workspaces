@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-time setup for Classic workspaces. Wires the loaders into
 # hyprland.lua and sets which workspaces file is live:
-#   bash ~/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/scripts/setup-classic.sh
+#   bash ~/.config/hexciri/plugins/pizza.dirty.nyxiri-workspaces/scripts/setup-classic.sh
 # What it does, all idempotent, then reloads Hyprland:
 #   1. Appends one dofile block to hyprland.lua (backing it up first)
 #      that loads the plugin's hypr/classic-workspaces.lua and your two
@@ -26,7 +26,7 @@ set -euo pipefail
 hypr_dir="$HOME/.config/hypr"
 conf="$hypr_dir/hyprland.lua"
 marker="-- BEGIN pizza.dirty.nyxiri-workspaces"
-flag="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/toggles/no-monitor-workspaces"
+flag="${XDG_STATE_HOME:-$HOME/.local/state}/hexciri/toggles/no-monitor-workspaces"
 plugin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # 0. Install the two workspaces files from the plugin (copy if missing).
@@ -53,7 +53,7 @@ if ! grep -Fq -- "$marker" "$conf" 2>/dev/null; then
   cat >> "$conf" <<'LUA'
 -- BEGIN pizza.dirty.nyxiri-workspaces
 do
-  local path = os.getenv("HOME") .. "/.config/omarchy/plugins/pizza.dirty.nyxiri-workspaces/hypr/classic-workspaces.lua"
+  local path = os.getenv("HOME") .. "/.config/hexciri/plugins/pizza.dirty.nyxiri-workspaces/hypr/classic-workspaces.lua"
   local file = io.open(path, "r")
   if file then file:close(); dofile(path) end
 end
