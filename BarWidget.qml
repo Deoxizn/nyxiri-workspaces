@@ -17,6 +17,12 @@ import "WorkspaceModel.js" as Model
 //              | apps      apps shows the icons of the apps running on a
 //                          workspace instead of its marker: icons only, no
 //                          numbers, no counts. Empty cells keep the marker.
+//                          Notification badges: a red circle with the
+//                          unread count (99+ cap) on an icon, title-parsed
+//                          only, Dorion / Vesktop / Discord and allowlisted
+//                          Brave webapps (Messenger etc) — see
+//                          WorkspaceModel.js unreadCountFor. Other styles
+//                          show a red dot on the cell instead of a number.
 //   iconSize   12-24, default 16       app icon size, apps style only
 //   ranges     "DP-1:1-5,HDMI-A-1:6-10" which workspaces each monitor shows,
 //              classic mode only; 0 means 10, so 6-0 is 6-10
@@ -455,6 +461,7 @@ BarWidget {
         // 2px gap, plus 8px of padding.
         readonly property var apps: root.style === "apps" ? Model.appsForWorkspace(modelData, root.workspaceValues) : []
         readonly property bool showAppIcons: apps.length > 0
+        readonly property int unreadTotal: Model.workspaceUnreadCount(modelData, root.workspaceValues)
         readonly property int appCellSpan: showAppIcons ? apps.length * (root.iconSize + 2) + 8 : 0
 
         // A gap sets visiting workspaces apart from the monitor's own.
@@ -498,6 +505,22 @@ BarWidget {
           z: -1
           radius: Style.cornerRadius
           color: Qt.rgba(0, 0, 0, 0.28)
+        }
+
+        // Notification dot for non-apps styles: apps style badges each
+        // icon instead. A plain dot, no number, so text / shape cells
+        // stay readable.
+        Rectangle {
+          anchors.top: parent.top
+          anchors.right: parent.right
+          anchors.topMargin: 2
+          anchors.rightMargin: 2
+          visible: root.style !== "apps" && unreadTotal > 0
+          width: 8
+          height: 8
+          radius: 4
+          color: "#ff3333"
+          z: 2
         }
 
         // Apps style only: a thin divider at the cell's trailing edge, so
@@ -607,6 +630,32 @@ BarWidget {
                 text: Model.fallbackLetter(info.name, modelData.appId)
                 color: Commons.Color.foreground
                 font.pixelSize: Style.space(Math.round(root.iconSize * 0.7))
+              }
+
+              // Notification badge: a small red circle at the icon's
+              // top-right, number capped at 99+. Title-parsed only, so
+              // it only appears for Dorion / Vesktop / Discord and
+              // allowlisted Brave webapps; other apps have unreadCount 0.
+              Rectangle {
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.topMargin: -4
+                anchors.rightMargin: -4
+                visible: (modelData.unreadCount || 0) > 0
+                width: badgeText.implicitWidth + 7
+                height: 14
+                radius: 7
+                color: "#ff3333"
+                z: 2
+
+                Text {
+                  id: badgeText
+                  anchors.centerIn: parent
+                  text: Model.formatUnreadCount(modelData.unreadCount || 0)
+                  color: "white"
+                  font.pixelSize: 9
+                  font.bold: true
+                }
               }
             }
           }

@@ -250,6 +250,52 @@ function fallbackLetter(name, appId) {
   return first === undefined ? "" : String.fromCodePoint(first).toUpperCase()
 }
 
+// Notification badges, title-parsed only. No Wayland / DBus / Hyprland
+// field exposes unread counts, and Chromium's Badging API does nothing
+// on Linux, so the only source is the window title: Discord / Dorion /
+// Vesktop put "(N) Discord" in document.title (Dorion's own notifGetter
+// reads exactly that), and Messenger / Facebook webapps follow the same
+// "(N) Title" convention. Strict parse, allowlisted apps only, so a
+// title like "(2024) Report" on any other window never badges.
+//   unreadCountFor(title, appId)  0 when no count, not allowlisted, or
+//                                 the count is 0
+//   workspaceUnreadCount(id, values)  sum of the first-seen window per
+//                                 app on that workspace (one icon per app,
+//                                 so one badge per app, no double-count)
+//   formatUnreadCount(n)  "99+" above 99, else the number
+var BADGE_DISPLAY_MAX = 99
+var BADGE_APPS = ["dorion", "vesktop", "discord"]
+var BADGE_HOSTS = ["messenger.com", "facebook.com", "discord.com"]
+
+function isBadgeApp(appId) {
+  var id = String(appId || "")
+  if (!id) return false
+  var candidates = appIdCandidates(id)
+  for (var i = 0; i < candidates.length; i++) {
+    if (BADGE_APPS.indexOf(String(candidates[i]).toLowerCase()) !== -1) return true
+  }
+  var host = webAppHost(id).toLowerCase()
+  if (!host) return false
+  for (var j = 0; j < BADGE_HOSTS.length; j++) {
+    if (host === BADGE_HOSTS[j] || host.slice(-BADGE_HOSTS[j].length - 1) === "." + BADGE_HOSTS[j]) return true
+  }
+  return false
+}
+
+function unreadCountFor(title, appId) {
+  var match = /^\((\d{1,3})\)\s/.exec(String(title || ""))
+  if (!match) return 0
+  if (!isBadgeApp(appId)) return 0
+  var count = Number(match[1])
+  return Number.isInteger(count) && count > 0 ? count : 0
+}
+
+function formatUnreadCount(count) {
+  var n = Number(count) || 0
+  if (n <= 0) return ""
+  return n > BADGE_DISPLAY_MAX ? BADGE_DISPLAY_MAX + "+" : String(n)
+}
+
 // The apps running on one workspace, one entry per app in first-seen
 // order, capped at MAX_APPS. The shell hosts more than one app under its
 // own id, so each of its windows keeps its own entry instead of
@@ -272,12 +318,21 @@ function appsForWorkspace(idValue, values) {
         : appKey(appId)
       if (seen[key]) continue
       seen[key] = true
-      out.push({ appId: appId, title: String(app.title || "") })
+      out.push({ appId: appId, title: String(app.title || ""), unreadCount: unreadCountFor(app.title, appId) })
       if (out.length >= MAX_APPS) return out
     }
     return out
   }
   return out
+}
+
+// Sum of the per-app unread counts on one workspace, for the dot on
+// non-apps styles. Apps style shows the count on each icon instead.
+function workspaceUnreadCount(idValue, values) {
+  var apps = appsForWorkspace(idValue, values)
+  var total = 0
+  for (var i = 0; i < apps.length; i++) total += Number(apps[i].unreadCount) || 0
+  return total
 }
 
 function visibleIds(modeValue, hideEmpty, block, values, focusedId, monitorName, perMonitor, range) {
