@@ -197,13 +197,13 @@ test("steamAppId pulls the numeric id out of a Steam game id", () => {
 
 test("appsForWorkspace returns one entry per app, first-seen order, capped at six", () => {
   assert.deepEqual(Model.appsForWorkspace(3, APP_VALUES), [
-    { appId: "firefox", title: "Mozilla Firefox", unreadCount: 0 },
-    { appId: "org.gnome.Nautilus", title: "Files", unreadCount: 0 }
+    { appId: "firefox", title: "Mozilla Firefox" },
+    { appId: "org.gnome.Nautilus", title: "Files" }
   ])
   // Shell-hosted windows keep their own entries despite sharing an id.
   assert.deepEqual(Model.appsForWorkspace(5, APP_VALUES), [
-    { appId: "org.quickshell", title: "Omamail", unreadCount: 0 },
-    { appId: "org.quickshell", title: "Settings", unreadCount: 0 }
+    { appId: "org.quickshell", title: "Omamail" },
+    { appId: "org.quickshell", title: "Settings" }
   ])
   // Eight apps collapse to the first six.
   assert.deepEqual(
@@ -321,68 +321,4 @@ test("classic mode with hideEmpty keeps only occupied workspaces and the focused
     Model.visibleIds("10", true, 0, VALUES, 3, "DP-1", false, null),
     [3, 12, 13]
   )
-})
-
-// Notification badges, title-parsed only: "(N) Discord" / "(N) Messenger".
-const BADGE_VALUES = [
-  { id: 6, windowCount: 3, monitorName: "DP-1", apps: [
-    { appId: "Dorion", title: "(3) Discord" },
-    { appId: "brave-web.messenger.com__-Default", title: "(2) Messenger" },
-    { appId: "firefox", title: "(99) Report" }
-  ] },
-  { id: 7, windowCount: 2, monitorName: "DP-1", apps: [
-    { appId: "vesktop", title: "(120) Vesktop" },
-    { appId: "com.spikehd.dorion", title: "(1) Discord" }
-  ] },
-  { id: 8, windowCount: 1, monitorName: "DP-1", apps: [
-    { appId: "brave-web.messenger.com__-Default", title: "Messenger" }
-  ] }
-]
-
-test("unreadCountFor parses (N) only for Dorion/Vesktop/Discord and allowlisted Brave webapps", () => {
-  assert.equal(Model.unreadCountFor("(3) Discord", "Dorion"), 3)
-  assert.equal(Model.unreadCountFor("(3) Discord", "com.spikehd.dorion"), 3)
-  assert.equal(Model.unreadCountFor("(5) Discord", "vesktop"), 5)
-  assert.equal(Model.unreadCountFor("(5) Discord", "discord"), 5)
-  assert.equal(Model.unreadCountFor("(2) Messenger", "brave-web.messenger.com__-Default"), 2)
-  assert.equal(Model.unreadCountFor("(2) Messenger", "brave-web.facebook.com__-Default"), 2)
-  // No count, no parens, or a zero count: no badge.
-  assert.equal(Model.unreadCountFor("Discord", "Dorion"), 0)
-  assert.equal(Model.unreadCountFor("Messenger", "brave-web.messenger.com__-Default"), 0)
-  assert.equal(Model.unreadCountFor("(0) Discord", "Dorion"), 0)
-  assert.equal(Model.unreadCountFor("", "Dorion"), 0)
-  // False positives: not allowlisted, so a parenthesised number is ignored.
-  assert.equal(Model.unreadCountFor("(99) Report", "firefox"), 0)
-  assert.equal(Model.unreadCountFor("(12) Inbox", "brave-web.gmail.com__-Default"), 0)
-  assert.equal(Model.unreadCountFor("(3) Discord", "firefox"), 0)
-  // Four digits, no space, or a count mid-title: strict ^((\d{1,3}))\s only.
-  assert.equal(Model.unreadCountFor("(1234) Discord", "Dorion"), 0)
-  assert.equal(Model.unreadCountFor("(3)Discord", "Dorion"), 0)
-  assert.equal(Model.unreadCountFor("Chat (3) Discord", "Dorion"), 0)
-  assert.equal(Model.unreadCountFor("(2024) Report", "Dorion"), 0)
-})
-
-test("formatUnreadCount caps at 99+", () => {
-  assert.equal(Model.formatUnreadCount(0), "")
-  assert.equal(Model.formatUnreadCount(1), "1")
-  assert.equal(Model.formatUnreadCount(99), "99")
-  assert.equal(Model.formatUnreadCount(100), "99+")
-  assert.equal(Model.formatUnreadCount(120), "99+")
-  assert.equal(Model.BADGE_DISPLAY_MAX, 99)
-})
-
-test("workspaceUnreadCount sums first-seen per app, no double-count, no badge for unbadged apps", () => {
-  // Dorion 3 + Messenger 2; Firefox (99) is not allowlisted, so it adds 0.
-  assert.equal(Model.workspaceUnreadCount(6, BADGE_VALUES), 5)
-  // Vesktop 120 + Dorion 1, summed raw (display caps at 99+).
-  assert.equal(Model.workspaceUnreadCount(7, BADGE_VALUES), 121)
-  assert.equal(Model.workspaceUnreadCount(8, BADGE_VALUES), 0)
-  assert.equal(Model.workspaceUnreadCount(99, BADGE_VALUES), 0)
-  // Per-app counts ride appsForWorkspace, so the apps-style delegate
-  // can badge each icon.
-  assert.deepEqual(Model.appsForWorkspace(6, BADGE_VALUES), [
-    { appId: "Dorion", title: "(3) Discord", unreadCount: 3 },
-    { appId: "brave-web.messenger.com__-Default", title: "(2) Messenger", unreadCount: 2 },
-    { appId: "firefox", title: "(99) Report", unreadCount: 0 }
-  ])
 })
