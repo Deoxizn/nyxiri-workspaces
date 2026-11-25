@@ -176,6 +176,33 @@ function steamAppId(appId) {
   return match ? match[1] : ""
 }
 
+// Icon lookup keys for an app: the desktop entry's Icon= value and the
+// app id, each as-is and lowercased, plus the reverse-DNS tail of each.
+// Icon files and themed sets are usually lowercase ("dorion"), while a
+// class like Dorion is capitalised, so a single case-sensitive try misses
+// ("Dorion" -> ["Dorion", "dorion"]; "com.spikehd.dorion" ->
+// ["com.spikehd.dorion", "dorion"]; "vesktop" -> ["vesktop"]).
+function iconNameCandidates(icon, appId) {
+  var out = []
+  function add(v) { if (v && out.indexOf(v) === -1) out.push(v) }
+  function addTail(v) {
+    var dot = String(v).lastIndexOf(".")
+    if (dot > 0 && dot < String(v).length - 1) {
+      add(String(v).slice(dot + 1))
+      add(String(v).slice(dot + 1).toLowerCase())
+    }
+  }
+  var name = String(icon || "")
+  var id = String(appId || "")
+  add(name)
+  add(name.toLowerCase())
+  add(id)
+  add(id.toLowerCase())
+  addTail(name)
+  addTail(id)
+  return out
+}
+
 function appIdCandidates(appId) {
   var id = String(appId || "")
   if (id === "") return []

@@ -303,12 +303,18 @@ BarWidget {
     var themed = ""
     if (icon !== "" && icon.indexOf("file://") !== 0 && icon.indexOf("image://") !== 0 && icon.charAt(0) !== "/") {
       var home = Quickshell.env("HOME") || ""
-      if (home !== "") themed = "file://" + home + "/.local/state/omarchy/current/icons/" + icon + ".svg"
+      if (home !== "") themed = "file://" + home + "/.local/state/omarchy/current/icons/" + icon.toLowerCase() + ".svg"
     }
     if (icon !== "") {
       if (icon.indexOf("file://") === 0 || icon.indexOf("image://") === 0) source = icon
       else if (icon.charAt(0) === "/") source = Util.fileUrl(icon)
-      else source = Quickshell.iconPath(icon, true)
+      else {
+        var candidates = Model.iconNameCandidates(icon, appId)
+        for (var c = 0; c < candidates.length; c++) {
+          var found = Quickshell.iconPath(candidates[c], true)
+          if (found !== "") { source = found; break }
+        }
+      }
     }
     // A Steam library game with a numeric id: the icon Steam cached for
     // it in librarycache. A missing file just errors the Image and the

@@ -178,6 +178,15 @@ test("appIdCandidates strips the steam_app_ prefix for the shortcut name", () =>
   assert.deepEqual(Model.appIdCandidates("firefox"), ["firefox"])
 })
 
+test("iconNameCandidates tries the icon and app id as-is, lowercased, and the reverse-DNS tail", () => {
+  assert.deepEqual(Model.iconNameCandidates("Dorion", "Dorion"), ["Dorion", "dorion"])
+  assert.deepEqual(Model.iconNameCandidates("com.spikehd.dorion", "com.spikehd.dorion"), ["com.spikehd.dorion", "dorion"])
+  assert.deepEqual(Model.iconNameCandidates("Dorion", "com.spikehd.dorion"), ["Dorion", "dorion", "com.spikehd.dorion"])
+  assert.deepEqual(Model.iconNameCandidates("vesktop", "vesktop"), ["vesktop"])
+  assert.deepEqual(Model.iconNameCandidates("org.gnome.Nautilus", "org.gnome.Nautilus"), ["org.gnome.Nautilus", "org.gnome.nautilus", "Nautilus", "nautilus"])
+  assert.deepEqual(Model.iconNameCandidates("", ""), [])
+})
+
 test("steamAppId pulls the numeric id out of a Steam game id", () => {
   assert.equal(Model.steamAppId("steam_app_12345"), "12345")
   assert.equal(Model.steamAppId("steam_app_battlenet"), "")

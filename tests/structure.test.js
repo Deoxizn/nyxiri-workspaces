@@ -89,7 +89,12 @@ test("style apps renders one icon per app, icons only, and nothing else from Spa
   // Icons resolve through the desktop entries and the icon theme.
   assert.match(widget, /DesktopEntries\.byId\(/)
   assert.match(widget, /DesktopEntries\.heuristicLookup\(appId\)/)
-  assert.match(widget, /Quickshell\.iconPath\(icon, true\)/)
+  // Icon lookup tries the icon/app-id candidates (as-is, lowercased,
+  // reverse-DNS tail), so a capitalised class like Dorion still finds a
+  // lowercase dorion icon, and the themed path is lowercase too.
+  assert.match(widget, /Model\.iconNameCandidates\(icon, appId\)/)
+  assert.match(widget, /Quickshell\.iconPath\(candidates\[c\], true\)/)
+  assert.match(widget, /icon\.toLowerCase\(\) \+ "\.svg"/)
   // The cell shows a row of icons with a letter fallback, the marker hidden.
   assert.match(widget, /readonly property var apps: root\.style === "apps" \? Model\.appsForWorkspace\(modelData, root\.workspaceValues\) : \[\]/)
   assert.match(widget, /readonly property bool showAppIcons: apps\.length > 0/)
