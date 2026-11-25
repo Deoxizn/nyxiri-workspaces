@@ -83,6 +83,15 @@ PanelWindow {
     modeSwitch.running = true
   }
 
+  // A ranges edit while already in classic needs a Hyprland reload to
+  // take effect (ranges-pinning.lua reads shell.json when it loads);
+  // mode switches reload anyway. Best-effort, no error surface.
+  function reloadForRanges() {
+    if (!popup.classicMode || rangesReload.running) return
+    rangesReload.command = ["hyprctl", "reload"]
+    rangesReload.running = true
+  }
+
   // ------------------------------------------------------------------- ui
 
   onVisibleChanged: {
@@ -250,6 +259,13 @@ PanelWindow {
       popup.refreshClassicMode()
     }
   }
+  // Reloads Hyprland after a ranges edit; see reloadForRanges().
+  Process {
+    id: rangesReload
+    stdout: StdioCollector { waitForEnd: true }
+    stderr: StdioCollector { waitForEnd: true }
+  }
+
 
   // The window body: a fixed-size surface centered on its screen. The
   // PanelWindow itself spans the screen (transparent) and the mask limits
@@ -404,7 +420,7 @@ PanelWindow {
             foreground: popup.bar.foreground
             font.family: popup.bar.fontFamily
             font.pixelSize: Style.font.body
-            onCommit: function(value) { popup.setWorkspaces({ ranges: value }) }
+            onCommit: function(value) { popup.setWorkspaces({ ranges: value }); popup.reloadForRanges() }
           }
 
           // App icon size only matters for the Apps style, so the slider

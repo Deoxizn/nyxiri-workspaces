@@ -4,7 +4,8 @@
 #   bash ~/.config/hexciri/plugins/pizza.dirty.nyxiri-workspaces/scripts/setup-classic.sh
 # What it does, all idempotent, then reloads Hyprland:
 #   1. Appends one dofile block to hyprland.lua (backing it up first)
-#      that loads the plugin's hypr/classic-workspaces.lua and your two
+#      that loads the plugin's hypr/classic-workspaces.lua and
+#      hypr/ranges-pinning.lua (Classic per-monitor ranges) and your two
 #      workspaces files, ~/.config/hypr/workspaces.lua (4.5) and
 #      ~/.config/hypr/workspaces-classic.lua (classic). Each load is
 #      guarded, so a missing file is skipped. An old block (classic Lua
@@ -39,9 +40,9 @@ for f in workspaces.lua workspaces-classic.lua; do
   fi
 done
 
-# 1. Loader block in hyprland.lua (classic Lua + both workspaces files).
+# 1. Loader block in hyprland.lua (classic Lua + ranges pinning + both workspaces files).
 if grep -Fq -- "$marker" "$conf" 2>/dev/null; then
-  if grep -Fq -- ".config/hypr/workspaces.lua" "$conf"; then
+  if grep -Fq -- ".config/hypr/workspaces.lua" "$conf" && grep -Fq -- "ranges-pinning.lua" "$conf"; then
     echo "Classic workspaces block already in $conf; nothing to do."
   else
     cp "$conf" "$conf.bak.$(date +%s)"
@@ -54,6 +55,11 @@ if ! grep -Fq -- "$marker" "$conf" 2>/dev/null; then
 -- BEGIN pizza.dirty.nyxiri-workspaces
 do
   local path = os.getenv("HOME") .. "/.config/hexciri/plugins/pizza.dirty.nyxiri-workspaces/hypr/classic-workspaces.lua"
+  local file = io.open(path, "r")
+  if file then file:close(); dofile(path) end
+end
+do
+  local path = os.getenv("HOME") .. "/.config/hexciri/plugins/pizza.dirty.nyxiri-workspaces/hypr/ranges-pinning.lua"
   local file = io.open(path, "r")
   if file then file:close(); dofile(path) end
 end
