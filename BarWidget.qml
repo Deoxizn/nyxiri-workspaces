@@ -259,12 +259,28 @@ BarWidget {
     return out
   }
 
+  // Webapp favicons, cached on disk: the first sight of a host fetches
+  // its favicon once into ~/.local/share/hexciri/webapp-icons/, and
+  // later evaluations read the cached file, so a slow or failed fetch
+  // can only show the letter until the download lands, never again
+  // after. The fetch runs once per host per shell session; the script
+  // itself is idempotent and no-ops when the file already exists.
+  readonly property string webAppIconFetchScript: (Quickshell.env("HOME") || "") + "/.config/hexciri/plugins/pizza.dirty.nyxiri-workspaces/bin/fetch-webapp-icon"
+  property var webAppIconFetchStarted: ({})
+
+  function fetchWebAppIcon(host) {
+    var h = String(host || "")
+    if (h === "" || root.webAppIconFetchStarted[h] || !root.bar) return
+    root.webAppIconFetchStarted[h] = true
+    root.bar.run("bash " + Util.shellQuote(root.webAppIconFetchScript) + " " + Util.shellQuote(h))
+  }
+
   // Icon lookup, the small core of omarchy-spaces' appInfo: desktop entry
   // by id (with the reverse-DNS candidates), else a heuristic lookup, then
-  // the icon through the theme. No filesystem scan, no cache: every
-  // evaluation re-resolves, so a freshly installed app's icon just works.
-  // Returns { source, name }; source is "" when nothing resolves, and the
-  // delegate falls back to the app's first letter.
+  // the icon through the theme. No filesystem scan: every evaluation
+  // re-resolves, so a freshly installed app's icon just works. Returns
+  // { source, themed, cached, name }; source is "" when nothing resolves,
+  // and the delegate falls back to the app's first letter.
   function findDesktopEntry(appId) {
     if (!appId) return null
     var candidates = Model.appIdCandidates(appId)
@@ -294,6 +310,7 @@ BarWidget {
     var name = entry && entry.name ? String(entry.name) : ""
     var icon = entry && entry.icon ? String(entry.icon) : String(appId || "")
     var source = ""
+    var cached = ""
     // Omarchy's themed icons: the current icon set rendered in the theme's
     // colors lives in ~/.local/state/omarchy/current/icons/<name>.svg
     // (named after the desktop entry's Icon=). Use it when it exists and
@@ -325,17 +342,26 @@ BarWidget {
     }
     // Chromium --app windows with no desktop entry (link binds, not the
     // webapp installer): the site's favicon, from Google's favicon
-    // service. If the fetch fails the delegate falls back to the letter.
+    // service, with an on-disk cache in front of it. The delegate tries
+    // the cached file first and falls through to the live URL while the
+    // download is still in flight; the first sight of a host starts
+    // that download once. If both fail the delegate falls back to the
+    // letter.
     if (source === "") {
       var host = Model.webAppHost(appId)
-      if (host !== "") source = "https://www.google.com/s2/favicons?domain=" + host + "&sz=128"
+      if (host !== "") {
+        var dataHome = Quickshell.env("XDG_DATA_HOME") || (Quickshell.env("HOME") || "") + "/.local/share"
+        cached = Model.webAppCachePath(host, dataHome)
+        source = "https://www.google.com/s2/favicons?domain=" + host + "&sz=128"
+        root.fetchWebAppIcon(host)
+      }
     }
     // For a Steam game the title is the label: the game window is
     // "World of Warcraft" even when the entry is the Battle.net
     // launcher, so WoW shows "W" with a "World of Warcraft" tooltip
     // instead of "S" (or "B"). The icon still comes from the entry.
     if (/^steam_app_/.test(appId) && title) name = String(title)
-    return { source: source, themed: themed, name: name }
+    return { source: source, themed: themed, cached: cached, name: name }
   }
 
   function workspaceIds() {
@@ -577,13 +603,16 @@ BarWidget {
               required property var modelData
 
               readonly property var info: root.appInfo(modelData.appId, modelData.title)
-              // The themed source is tried first; a missing themed file
-              // errors the image, which flips this and falls back to the
-              // theme icon. Reset when the app changes so a new app tries
-              // its themed icon again.
+              // Sources are tried in order: the themed icon, then the
+              // cached webapp favicon, then the live icon or favicon
+              // URL. A missing file errors the image, which flips its
+              // latch and falls through to the next one. Both latches
+              // reset when the app changes so a new app tries its themed
+              // icon and its cached favicon again.
               property bool themedOk: true
-              onInfoChanged: themedOk = true
-              readonly property string effectiveSource: (info.themed !== "" && themedOk) ? info.themed : info.source
+              property bool cacheOk: true
+              onInfoChanged: { themedOk = true; cacheOk = true }
+              readonly property string effectiveSource: (info.themed !== "" && themedOk) ? info.themed : (info.cached !== "" && cacheOk) ? info.cached : info.source
 
               width: Style.space(root.iconSize)
               height: Style.space(root.iconSize)
@@ -593,7 +622,11 @@ BarWidget {
                 anchors.fill: parent
                 visible: effectiveSource !== "" && status !== Image.Error
                 source: effectiveSource
-                onStatusChanged: if (status === Image.Error && effectiveSource === info.themed) themedOk = false
+                onStatusChanged: {
+                  if (status !== Image.Error) return
+                  if (effectiveSource === info.themed) themedOk = false
+                  else if (effectiveSource === info.cached) cacheOk = false
+                }
                 sourceSize.width: root.iconSize * 2
                 sourceSize.height: root.iconSize * 2
                 fillMode: Image.PreserveAspectFit

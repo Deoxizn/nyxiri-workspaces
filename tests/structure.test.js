@@ -111,6 +111,14 @@ test("style apps renders one icon per app, icons only, and nothing else from Spa
   assert.match(widget, /Model\.webAppHost\(appId\)/)
   assert.match(widget, /s2\/favicons\?domain=/)
   assert.match(widget, /iconImage\.status === Image\.Error/)
+  // The favicon cache: a cached file is tried before the live URL, and
+  // the first sight of a host starts one background download.
+  assert.match(widget, /Model\.webAppCachePath\(host, dataHome\)/)
+  assert.match(widget, /cached: cached/)
+  assert.match(widget, /property bool cacheOk: true/)
+  assert.match(widget, /info\.cached !== "" && cacheOk/)
+  assert.match(widget, /fetchWebAppIcon\(host\)/)
+  assert.match(widget, /bin\/fetch-webapp-icon/)
   // Icon size scales the cell, the icon, and its decode size.
   assert.match(widget, /apps\.length \* \(root\.iconSize \+ 2\) \+ 8/)
   assert.match(widget, /Style\.space\(root\.iconSize\)/)
@@ -131,6 +139,16 @@ test("style apps renders one icon per app, icons only, and nothing else from Spa
   assert.match(widget, /if \(\/\^steam_app_\/\.test\(appId\) && title\) name = String\(title\)/)
   // The old showApps boolean is gone: apps is a style now.
   assert.doesNotMatch(widget, /showApps/)
+})
+
+test("fetch-webapp-icon downloads the favicon once, atomically, and only keeps real PNGs", () => {
+  const fetch = read("bin/fetch-webapp-icon")
+  assert.match(fetch, /s2\/favicons\?domain=/)
+  assert.match(fetch, /webapp-icons/)
+  assert.match(fetch, /\.tmp\./)
+  assert.match(fetch, /89504e470d0a1a0a/)
+  assert.match(fetch, /curl -fsSL/)
+  assert.match(fetch, /\[\[ -f \$dest \]\] && exit 0/)
 })
 
 test("the widget has no layout-glyph machinery left", () => {

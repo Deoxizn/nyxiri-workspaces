@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Fetch one webapp favicon into the on-disk cache: fetch-webapp-icon <host>
+#   <host> is the stripped host (muse.ai, messenger.com), taken from the
+#   window class by the workspaces widget. Idempotent: exits 0 at once
+#   when the cached file already exists, so the widget can fire it on
+#   every first sight of a host without re-downloading. Writes atomically
+#   (temp file + rename) and only keeps the result when it is really a
+#   PNG, so a failed download or an error page never leaves a bad file
+#   behind; a failure just means the next evaluation tries the live
+#   favicon URL again, exactly like before the cache existed.
+set -euo pipefail
+
+[[ -n "${HOME:-}" ]] || exit 0
+
+host="${1:-}"
+case "$host" in
+  "" | *[!A-Za-z0-9.-]* | .* | *..*) exit 0 ;;
+esac
+
+dir="${XDG_DATA_HOME:-$HOME/.local/share}/hexciri/webapp-icons"
+mkdir -p "$dir"
+dest="$dir/$host.png"
+[[ -f $dest ]] && exit 0
+
+tmp="$dest.tmp.$$"
+# Google's service 301-redirects to gstatic, so follow redirects; bound
+# the fetch so a hung request cannot linger past the shell session.
+if curl -fsSL --max-time 15 "https://www.google.com/s2/favicons?domain=$host&sz=128" -o "$tmp"; then
+  # PNG magic: 89 50 4E 47 0D 0A 1A 0A. Anything else is an error page.
+  if [[ $(head -c 8 "$tmp" | od -An -tx1 | tr -d ' \n') == "89504e470d0a1a0a" ]]; then
+    mv "$tmp" "$dest"
+    exit 0
+  fi
+fi
+rm -f "$tmp"
+exit 0

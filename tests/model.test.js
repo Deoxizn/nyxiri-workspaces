@@ -226,10 +226,28 @@ test("appIdCandidates tries the id, its lowercase form, and the reverse-DNS tail
 })
 
 test("webAppHost pulls the host out of a Chromium --app class", () => {
-  assert.equal(Model.webAppHost("chrome-web.whatsapp.com__-Default"), "web.whatsapp.com")
+  assert.equal(Model.webAppHost("chrome-web.whatsapp.com__-Default"), "whatsapp.com")
   assert.equal(Model.webAppHost("brave-app.hey.com__-Profile_1"), "app.hey.com")
+  // A leading "web." is Brave's, not the site's: Messenger's link bind
+  // runs as brave-web.messenger.com__-Default, but the site is
+  // messenger.com, and Muse's class carries no web. at all.
+  assert.equal(Model.webAppHost("brave-web.messenger.com__-Default"), "messenger.com")
+  assert.equal(Model.webAppHost("brave-muse.ai__-Default"), "muse.ai")
+  assert.equal(Model.webAppHost("chrome-web.telegram.org__-Default"), "telegram.org")
   assert.equal(Model.webAppHost("firefox"), "")
   assert.equal(Model.webAppHost(""), "")
+})
+
+test("webAppCachePath points at the per-host cached favicon, and refuses bad hosts", () => {
+  assert.equal(Model.webAppCachePath("muse.ai", "/home/devi/.local/share"), "file:///home/devi/.local/share/hexciri/webapp-icons/muse.ai.png")
+  assert.equal(Model.webAppCachePath("messenger.com", "/home/devi/.local/share"), "file:///home/devi/.local/share/hexciri/webapp-icons/messenger.com.png")
+  assert.equal(Model.webAppCachePath("", "/home/devi/.local/share"), "")
+  assert.equal(Model.webAppCachePath("muse.ai", ""), "")
+  // A window class is not trusted as a path: slashes, dotfiles, and
+  // dot-dot segments all refuse, so the caller falls back to the live URL.
+  assert.equal(Model.webAppCachePath("../evil", "/home/devi/.local/share"), "")
+  assert.equal(Model.webAppCachePath("a/b", "/home/devi/.local/share"), "")
+  assert.equal(Model.webAppCachePath(".hidden", "/home/devi/.local/share"), "")
 })
 
 test("appLabel prefers the entry name, then the webapp host, then the reverse-DNS tail", () => {

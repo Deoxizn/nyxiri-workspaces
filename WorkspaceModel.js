@@ -222,10 +222,29 @@ function appIdCandidates(appId) {
 
 // Chromium-family --app windows use classes like
 // "chrome-web.whatsapp.com__-Default" or "brave-app.hey.com__-Profile_1".
-// Returns the host ("web.whatsapp.com") or "" when the class is not one.
+// Returns the host ("whatsapp.com") or "" when the class is not one.
+// A leading "web." is stripped: Brave puts it on link binds
+// ("brave-web.messenger.com__-Default"), but the site itself lives at
+// messenger.com, and the favicon service answers for that host.
 function webAppHost(appId) {
   var m = /^(?:chrome|chromium|brave|msedge|vivaldi|helium|opera)-([^_]+?)(?:__|_).*-(?:Default|Profile_\d+)$/i.exec(String(appId || ""))
-  return m ? m[1] : ""
+  if (!m) return ""
+  var host = m[1]
+  return /^web\./i.test(host) ? host.slice(4) : host
+}
+
+// Where a webapp's favicon is cached on disk, as a file:// URL the
+// delegate Image can read: <dataHome>/hexciri/webapp-icons/<host>.png.
+// dataHome is the resolved data dir (XDG_DATA_HOME, else
+// $HOME/.local/share). "" when there is no host or no data dir, or the
+// host is not a plain hostname, so the caller falls back to the live
+// favicon URL instead of building a path out of a window class.
+function webAppCachePath(host, dataHome) {
+  var h = String(host || "")
+  var dir = String(dataHome || "")
+  if (h === "" || dir === "") return ""
+  if (/[^A-Za-z0-9.-]/.test(h) || h.charAt(0) === "." || h.indexOf("..") !== -1) return ""
+  return "file://" + dir + "/hexciri/webapp-icons/" + h + ".png"
 }
 
 // The readable label for an app: its desktop-entry name when known, the
